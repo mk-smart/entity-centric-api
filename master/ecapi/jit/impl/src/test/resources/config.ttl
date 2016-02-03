@@ -1,0 +1,64 @@
+@prefix mks: <http://mksmart.org/jit/term/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix void: <http://rdfs.org/ns/void#> . 
+@prefix : <http://mksmart.org/jit/> .
+
+#### Catalogue mock ####
+
+:domain
+	void:sparqlEndpoint <http://data.linkedu.eu/kis/query>
+		, <http://sparql.data.southampton.ac.uk> .
+		
+		
+<http://data.linkedu.eu/kis/institution/10007158> 
+	owl:sameAs <http://id.learning-provider.data.ac.uk/ukprn/10007158> ## EXTERNAL
+		, <http://id.southampton.ac.uk> 
+		, <http://dbpedia.org/resource/University_of_Southampton> ## EXTERNAL
+		, <http://gtr.rcuk.ac.uk:80/organisation/30A429E3-83B7-4E41-99C0-14A144F07DFE>  ## EXTERNAL
+.
+
+<http://data.linkedu.eu/kis/institution/10007773>
+	owl:sameAs <http://id.learning-provider.data.ac.uk/ukprn/10007773> ## EXTERNAL
+		, <http://data.open.ac.uk/organization/the_open_university>
+.
+
+#### CouchDB mock ####
+
+<http://data.linkedu.eu/kis/query> mks:supportsType <http://purl.org/net/mlo/qualification> .
+
+<http://sparql.data.southampton.ac.uk> mks:supportsType <http://purl.org/net/mlo/qualification> .
+
+<http://data.linkedu.eu/kis/ontology/courseId>
+	mks:isIdentifyingPropertyFor <http://purl.org/vocab/aiiso/schema#Course>
+.
+
+<http://data.linkedu.eu/kis/ontology/jacsCode>
+	mks:isIdentifyingPropertyFor <http://purl.org/vocab/aiiso/schema#Course>
+	; mks:unifiesWith <http://id.southampton.ac.uk/ns/bannerShortJACSCode>
+.
+
+<http://data.linkedu.eu/kis/ontology/ucasCourseId>
+	mks:isIdentifyingPropertyFor <http://purl.org/vocab/aiiso/schema#Course>
+	; mks:unifiesWith <http://id.southampton.ac.uk/ns/bannerUCASCode>
+.
+
+<http://purl.org/vocab/aiiso/schema#code>
+	mks:isIdentifyingPropertyFor <http://purl.org/vocab/aiiso/schema#Course>
+.
+
+<http://purl.org/vocab/aiiso/schema#Course> a owl:Class ;
+	mks:unifier [
+        a rdf:Bag;
+        rdf:_1 <http://purl.org/vocab/aiiso/schema#code> ;
+        rdf:_2 <http://xcri.org/profiles/catalog/1.2/awardedBy> ;
+    ] , [
+        a rdf:Bag;
+        rdf:_1 <http://data.linkedu.eu/kis/ontology/courseId> ;
+        rdf:_2 <http://courseware.rkbexplorer.com/ontologies/courseware#taught-at> ;
+    ]
+    ; mks:microcompiler """o1['http://data.linkedu.eu/kis/ontology/courseId'] = o2['http://purl.org/vocab/aiiso/schema#code'];
+    o1;
+    """
+.

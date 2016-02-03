@@ -1,0 +1,22 @@
+<?php
+$opts = get_option('ecapi_options');
+$dbms = new couchdb(
+	$opts['ecapi_config_db_url'], $opts['ecapi_config_db_name'], 
+	$opts['ecapi_config_db_username'], $opts['ecapi_config_db_password']
+);
+$json = $dbms->getDoc('datasets', '/_design/catalogue/_view/');
+?>
+<table>
+  <thead><tr>
+    <td>ID</id>
+	<td>Endpoint</id>
+  </tr></thead>
+  <tbody>
+<?php foreach( $json['data']->rows as $row ) : ?>
+    <tr>
+	  <td><a href="?page=ecapi-config&action=view&id=<?php print urlencode($row->id) ?>"><?php print $row->id ?></a></td>
+	  <td><?php print $row->value->service_url ?></td>
+    </tr>
+<?php endforeach; ?>
+  </tbody>
+</table>

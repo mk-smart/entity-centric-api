@@ -1,0 +1,16 @@
+{
+   "_id": "_design/type",
+   "language": "javascript",
+   "views": {
+       "guess": {
+           "map": "function(doc){ if (doc.type == 'representation') { for (propid in doc['mks:representation']) { emit(doc.type, { _id: propid }); } } }",
+           "reduce": "function(keys, values, rereduce) { return null }"
+       },
+       "short": {
+           "map": "function(doc){switch(doc.type){case'global-type-spec':var eqs=doc['mks:equiv-set'];if(typeof eqs==='string')eqs=[eqs];for(var i in eqs)emit(eqs[i],doc._id);break;}}"
+       },
+       "short-reverse": {
+           "map": "function(doc){switch(doc.type){case'type-spec':emit(doc['mks:short'],doc._id);break;case'global-type-spec':var rgx=/type\\/global:id\\/([\\w-_]+)/;if(doc._id.match(rgx)){var eqs=doc['mks:equiv-set'];if(typeof eqs==='string')eqs=[eqs];for(var i in eqs)emit(doc._id.match(rgx)[1],eqs[i]);}break;}}"
+       }
+   }
+}

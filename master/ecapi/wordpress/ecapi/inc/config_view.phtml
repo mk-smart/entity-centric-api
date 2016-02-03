@@ -1,0 +1,42 @@
+<?php
+$_id = $_GET['id'];
+$opts = get_option('ecapi_options');
+$dbms = new couchdb($opts['ecapi_config_db_url'], $opts['ecapi_config_db_name'], $opts['ecapi_config_db_username'],$opts['ecapi_config_db_password']);
+$json = $dbms->getDoc($_id);
+$json = $json['data'];
+?>
+<h1><?php print $_id ?></h1>
+<button class="button" onclick="window.location.href='?page=ecapi-config&action=edit&id=<?php print urlencode($_id) ?>'">Edit</button>
+<table class="wp-list-table widefat">
+	<thead><tr><th>Field</th><th>Value</th></thead>
+	<tbody>
+<tr><th>_id</th><td><?php print $json->_id ?></td></tr>
+<tr><th>_rev</th><td><?php print $json->_rev ?></td></tr>
+<tr><th>type</th><td><?php print $json->type ?></td></tr>
+<tr><th>Query endpoint<small> - http://rdfs.org/ns/void#sparqlEndpoint</small></th><td><?php print $json->{"http://rdfs.org/ns/void#sparqlEndpoint"} ?></td></tr>
+<tr><th>mks:graph</th><td><?php print $json->{"mks:graph"} ?></td></tr>
+<tr><th>mks:cache-lifetime</th><td><?php print $json->{"mks:cache-lifetime"} ?></td></tr>
+<tr><th>debug</th><td><?php print $json->debug ? 'yes' : 'no' ?></td></tr>
+<?php if( $json->{'catalogue-uuid'} ) : 
+	$uuid = $json->{'catalogue-uuid'};
+	$theds = MKSDC_DataAccess::instance()->getDatasetByUUID( $uuid );
+?>
+<tr><th>catalogued dataset</th><td><?php print "<p style=\"margin-bottom:0\">{$theds->post_title}</p>({$json->{'catalogue-uuid'}})" ?></td></tr>
+<?php endif; ?>
+	</tbody>
+</table>
+
+<h3>mks:types<button class="button" onclick="window.location.href='?page=ecapi-config&action=addtype&id=<?php print urlencode($_id) ?>'" style="float:right">Add new</button></h3>
+
+<?php foreach( $json->{"mks:types"} as $typeid => $typefuncs ) : ?>
+<hr/>
+<h4><?php print $typeid ?>
+	<button class="button" onclick="window.location.href='?page=ecapi-config&action=confirm_deletetype&id=<?php print urlencode($_id) ?>&typeid=<?php print urlencode($typeid) ?>'" style="float:right">Delete</button>
+	<button class="button" onclick="window.location.href='?page=ecapi-config&action=edittype&id=<?php print urlencode($_id) ?>&typeid=<?php print urlencode($typeid) ?>'" style="float:right">Edit</button>
+</h4>
+<table class="wp-list-table widefat">
+<?php 	foreach( $typefuncs as $field => $value ) : ?>
+<tr><th><?php print $field ?></th><td><pre style="white-space:pre-wrap"><?php print htmlentities(is_array($value) ? implode($value) : $value) ?></pre></td></tr>
+<?php 	endforeach; ?>
+</table>
+<?php endforeach; ?>

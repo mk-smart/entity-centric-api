@@ -1,0 +1,36 @@
+<html lang="en">
+
+<head>
+<title>MK:Smart Entity-centric API</title>
+</head>
+
+<body>
+	<p>
+		This is the <a href="http://mksmart.org">MK:Smart</a> entity-centric
+		API
+	</p>
+	<ul>
+		<li><a href="jit/entity">compiler root</a> URI scheme:
+			<ul>
+				<li><samp>{host}/jit/entity/{globaltype}/{identifier
+						scope}:{identifier type}/{identifier value}</samp> (for managed <em>asserted</em>
+					entity types), example <a
+					href=jit/entity/geo-unit/uk:postcode/MK77NY>jit/entity/geo-unit/uk:postcode/MK77NY</a></li>
+				<li><samp>{host}/jit/entity/has/{identifier
+						scope}:{identifier type}/{identifier value}</samp> (for managed <em>primitive</em>
+					entity types), example <a href=jit/entity/has/uk:postcode/MK77>jit/entity/has/uk:postcode/MK77</a></li>
+				<li><samp>{host}/jit/entity/thing/www:uri/{full URI
+						without scheme part}</samp> (for unmanaged entity types), example <a
+					href=jit/entity/thing/www:uri/data.open.ac.uk/qualification/w01>jit/entity/thing/www:uri/data.open.ac.uk/qualification/w01</a></li>
+			</ul></li>
+		<li><a href="jit/compiler">entity resolution root</a>
+			(deprecated). URI scheme:
+			<ul>
+				<li><samp>{host}/jit/compiler?id={local entity URI}</samp>,
+					example <a
+					href=jit/compiler?id=http://data.ordnancesurvey.co.uk/id/postcodedistrict/MK6>jit/compiler?id=http://data.ordnancesurvey.co.uk/id/postcodedistrict/MK6</a></li>
+			</ul></li>
+	</ul>
+</body>
+
+</html>

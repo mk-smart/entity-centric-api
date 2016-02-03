@@ -1,0 +1,9 @@
+{
+   "_id": "_design/cachetable",
+   "language": "javascript",
+   "views": {
+       "ages": {
+           "map": "function(doc){ emit(doc._id, doc.created)}"
+       }
+   }
+}

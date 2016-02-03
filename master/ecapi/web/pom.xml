@@ -1,0 +1,116 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.mksmart</groupId>
+	<artifactId>ecapi.web</artifactId>
+	<version>${datahub-version}</version>
+	<name>MK:Smart Entity-Centric API : Web services</name>
+
+	<parent>
+		<groupId>org.mksmart</groupId>
+		<artifactId>ecapi-parent</artifactId>
+		<version>1</version>
+		<relativePath>..</relativePath>
+	</parent>
+
+	<properties>
+		<!-- plugins -->
+		<org.apache.wink.version>1.4</org.apache.wink.version>
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-maven-plugin</artifactId>
+				<version>${org.eclipse.jetty.version}</version>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencies>
+
+		<!-- Project tax -->
+		<dependency>
+			<groupId>org.mksmart</groupId>
+			<artifactId>ecapi.access</artifactId>
+			<version>${datahub-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mksmart</groupId>
+			<artifactId>ecapi.api</artifactId>
+			<version>${datahub-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mksmart</groupId>
+			<artifactId>ecapi.jit-impl</artifactId>
+			<version>${datahub-version}</version>
+		</dependency>
+
+		<!-- Server tax -->
+		<dependency>
+			<groupId>org.apache.wink</groupId>
+			<artifactId>wink-server</artifactId>
+			<version>${org.apache.wink.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.wink</groupId>
+			<artifactId>wink-json-provider</artifactId>
+			<version>${org.apache.wink.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>3.1.0</version>
+		</dependency>
+		
+		<!-- TODO Deprecate asap -->
+		<dependency>
+			<groupId>org.apache.wink</groupId>
+			<artifactId>wink-client</artifactId>
+			<version>1.4</version>
+		</dependency>
+
+		<!-- Serialization tax -->
+		<dependency> <!-- Provides JSON-LD serializer -->
+			<groupId>org.apache.jena</groupId>
+			<artifactId>jena-arq</artifactId>
+			<version>${jena-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20140107</version>
+			<!-- <scope>test</scope> -->
+		</dependency>
+		<!-- note: typically only a ".0" patch version exists for jackson-annotations -->
+<!-- 
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.3.3</version>
+		</dependency>
+		<dependency>		
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.3.1</version>
+		</dependency>
+-->
+
+		<!-- Commons tax -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.4</version>
+		</dependency>
+
+	</dependencies>
+
+</project>

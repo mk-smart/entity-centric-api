@@ -1,0 +1,93 @@
+	<div id="main">
+    
+<?php
+
+function listDatasetsDiocane(){
+	$dacc = MKSDC_DataAccess::instance();
+	$type = 'mksdc-datasets';
+	$args=array(
+		'post_type' => $type,
+		'post_status' => 'publish',
+		'posts_per_page' => -1,
+		'ignore_sticky_posts'=> 1
+	);
+	$my_query = new WP_Query($args);
+	$datasets = array();
+	while ($my_query->have_posts()) {
+		$my_query->the_post();
+		$tags = get_the_tags();
+		array_push($datasets, array(
+			'uuid' => $dacc->getDatasetUUIDByPostId(get_the_id()),
+			'permalink' => get_the_permalink(),
+			'post_title' => get_the_title()
+		));
+	}
+	wp_reset_query();
+	
+	function cmpa($a, $b)
+	{
+		return strcmp($a['post_title'], $b['post_title']);
+	}
+
+	usort($datasets, "cmpa");
+	
+	return $datasets;
+}
+
+$_id = $_GET['id'];
+$opts = get_option('ecapi_options');
+$dbms = new couchdb(
+	$opts['ecapi_config_db_url'], $opts['ecapi_config_db_name'], 
+	$opts['ecapi_config_db_username'],$opts['ecapi_config_db_password']
+);
+$docjson = $dbms->getDoc($_id);
+$docjson= $docjson['data'];
+
+
+$datasetz = array();
+foreach( listDatasetsDiocane() as $ds )
+	$datasetz []= array( 'title' => $ds['post_title'] , 'uuid' => $ds['uuid'] );
+
+?>   
+		<h1><?php print $_id ?></h1>
+		<button class="button" name="view" type="button" onclick="window.location.href='?page=ecapi-config&action=view&id=<?php print urlencode($_id) ?>'">View</button>
+		<form action="" method="POST">
+			<input type="hidden" name="page" value="ecapi-config">
+			<input type="hidden" name="id" value="<?php echo $_id ?>">
+			<table class="wp-list-table widefat"><tbody>
+				<tr><th>_id</th>
+					<td><input type="text" placeholder="config doc id" size="64" name="rid" value="<?php echo $_id ?>" readonly></td>
+				</tr>
+				<tr><th>_rev</th>
+					<td><input type="text" placeholder="config doc id" size="64" name="_rev" value="<?php echo $docjson->_rev?>" readonly></td>
+				</tr>
+				<tr><th>Dataset</th>
+					<td><select name="dataset-uuid">
+					<?php foreach($datasetz as $ds): ?>
+						<option value="<?php print $ds['uuid']?>"
+						<?php if($ds['uuid'] ==  $docjson->{"catalogue-uuid"}): ?>
+						selected="selected"
+						<?php endif; ?>
+						><?php print $ds['title'] ?></option>
+					<?php endforeach; ?>
+					</select>
+					</td>
+				</tr>	
+				<tr><th>debug</th>
+					<td><input type="checkbox" name="debug" value="debug"<?php if( isset($docjson->debug) && $docjson->debug==TRUE ) print ' checked="checked"' ?>/></td>
+				</tr>
+				<tr><th>mks:cache-lifetime</th>
+					<td><input type="number" placeholder="in milliseconds" size="30" name="cache" value="<?php echo $docjson->{"mks:cache-lifetime"} ?>"/></td>
+				</tr>				
+				<tr><th>http://rdfs.org/ns/void#sparqlEndpoint</th>
+					<td><input type="text" placeholder="URL" size="64" name="endpoint" value="<?php echo $docjson->{"http://rdfs.org/ns/void#sparqlEndpoint"} ?>"/></td>
+				</tr>	
+				<tr><th>mks:graph</th>
+					<td><input type="text" placeholder="URI" size="64" name="graph" value="<?php echo $docjson->{"mks:graph"} ?>"/></td>
+				</tr>
+
+			</tbody></table>
+			<button class="button" name="reset" type="button" onclick="window.location.href='?page=ecapi-config&action=edit&id=<?php print urlencode($_id) ?>'">Reset</button>
+			<button class="button" name="action" value="save" type="submit">Save</button>
+		</form>
+	</div>

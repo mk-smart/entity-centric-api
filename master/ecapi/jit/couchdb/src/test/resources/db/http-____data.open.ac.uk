@@ -1,0 +1,7 @@
+{
+   "_id": "http://data.open.ac.uk",
+   "type": "provider-spec",
+   "http://rdfs.org/ns/void#sparqlEndpoint": "http://data.open.ac.uk/query",
+   "mks:short": "data.open.ac.uk",
+   "mks:self": "http://data.open.ac.uk/organization/the_open_university"
+}

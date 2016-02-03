@@ -1,0 +1,18 @@
+{
+   "_id": "_design/compile",
+   "language": "javascript",
+   "views": {
+       "typemaps": {
+           "map": "function(doc){ switch(doc.type){ case 'provider-spec': for(var ty in doc['mks:types']) emit(ty, { dataset: doc._id, debug:doc.debug, globalise: doc['mks:types'][ty].globalise, localise: doc['mks:types'][ty].localise }); break; case 'global-type-spec': emit(doc._id, { super:doc['mks:super'], globalise: doc.globalise, localise: doc.localise }); break; } }"
+       },
+       "primitives": {
+           "map": "function(doc){ switch(doc.type){ case 'provider-spec': for(var ty in doc['mks:primitives']) emit(ty, { dataset: doc._id, debug:doc.debug, query: doc['mks:primitives'][ty].query }); break; case 'global-type-spec': if(doc.typecat=='primitive') emit(doc._id, { query: doc.query }); break; } }"
+       },
+       "typedataset": {
+           "map": "function(doc){if(doc.type=='provider-spec'){for(var ty in doc['mks:types']){var it=doc['mks:types'][ty];var va={dataset:doc._id,debug:doc.debug,sep:doc['http://rdfs.org/ns/void#sparqlEndpoint'],globalise:it.globalise,localise:it.localise,query_tpl:it.query_tpl,query_text:it.query_text,examples:it.example_instances,fetch_query:it.fetch_query};emit(ty,va)}}}"
+       },
+       "typefunctions": {
+           "map": "function(doc){if(doc.type=='global-type-spec') emit(doc._id,{super:doc['mks:super'], localise:doc.localise, query_tpl:doc.query_tpl, query_text:doc.query_text})}"
+       }
+   }
+}

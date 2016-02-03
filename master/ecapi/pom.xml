@@ -1,0 +1,81 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.mksmart</groupId>
+	<artifactId>ecapi-parent</artifactId>
+	<packaging>pom</packaging>
+	<version>1</version>
+	<name>MK:Smart Entity-Centric API</name>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<datahub-version>1.2-SNAPSHOT</datahub-version>
+		<jena-version>2.12.1</jena-version>
+		<org.eclipse.jetty.version>9.2.3.v20140905</org.eclipse.jetty.version>
+		<slf4j-version>1.6.1</slf4j-version>
+	</properties>
+
+	<modules>
+		<module>generic/api</module>
+		<module>generic/core</module>
+		<module>commons/couchdb</module>
+		<module>jit/impl</module>
+		<module>jit/couchdb</module>
+		<module>access</module>
+		<module>web</module>
+		<module>standalone</module>
+		<module>test</module>
+	</modules>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+
+				<!-- Attach sources for all builds -->
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-source-plugin</artifactId>
+					<inherited>true</inherited>
+					<executions>
+						<execution>
+							<id>attach-sources</id>
+							<goals>
+								<goal>jar</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<configuration>
+						<source>1.7</source>
+						<target>1.7</target>
+					</configuration>
+				</plugin>
+
+			</plugins>
+		</pluginManagement>
+	</build>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.10</version>
+			<scope>test</scope>
+		</dependency>
+
+	</dependencies>
+
+</project>

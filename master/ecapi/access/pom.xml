@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.mksmart</groupId>
+	<artifactId>ecapi.access</artifactId>
+	<packaging>jar</packaging>
+	<version>${datahub-version}</version>
+	<name>MK:Smart Entity-Centric API : access policy module</name>
+
+	<parent>
+		<groupId>org.mksmart</groupId>
+		<artifactId>ecapi-parent</artifactId>
+		<version>1</version>
+		<relativePath>..</relativePath>
+	</parent>
+
+	<build>
+	</build>
+
+	<dependencies>
+
+		<!-- project tax -->
+		<dependency>
+			<groupId>org.mksmart</groupId>
+			<artifactId>ecapi.api</artifactId>
+			<version>${datahub-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mksmart</groupId>
+			<artifactId>ecapi.core</artifactId>
+			<version>${datahub-version}</version>
+		</dependency>
+
+		<!-- client tax -->
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>[5.1,5.2)</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.wink</groupId>
+			<artifactId>wink-client</artifactId>
+			<version>1.4</version>
+		</dependency>	
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20140107</version>
+		</dependency>
+
+		<!-- logging tax -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>${slf4j-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.16</version>
+			<scope>runtime</scope>
+		</dependency>
+
+	</dependencies>
+
+</project>

@@ -1,0 +1,41 @@
+<?php
+if( empty($_GET['id']) )
+	die("No configuration ID set.");
+$_id = $_GET['id'];
+$opts = get_option('ecapi_options');
+$dbms = new couchdb(
+	$opts['ecapi_config_db_url'], $opts['ecapi_config_db_name'], 
+	$opts['ecapi_config_db_username'],$opts['ecapi_config_db_password']
+);
+$docjson = $dbms->getDoc($_id);
+$docjson = $docjson['data'];
+
+if( isset($docjson->{"mks:types"}->$typeid) )
+	die("Supplied type ID already present. To change it, use the Edit button.");
+?>  
+	<div id="main">
+		<h1><?php print $_id ?></h1>
+		<button class="button" name="view" type="button" onclick="window.location.href='?page=ecapi-config&action=view&id=<?php print urlencode($_id) ?>'">View</button>
+		<form action="" method="POST">
+			<input type="hidden" name="page" value="ecapi-config">
+			<input type="hidden" name="id" value="<?php echo $_id ?>">
+			<table class="wp-list-table widefat"><tbody>
+				<tr><th>_rev</th>
+					<td><input type="text" placeholder="config doc id" size="64" name="_rev" value="<?php echo $docjson->_rev?>" readonly></td>
+				</tr>
+				<tr><th>Type ID</th>
+					<td><input type="text" placeholder="config doc id" size="64" name="typeid" required></td>
+				</tr>
+				<tr><th>localise</th>
+					<td><textarea name="localise" cols=80 rows=6></textarea></td>
+				</tr>
+				<tr><th>query_text</th>
+					<td><textarea name="query_text" cols=80 rows=6></textarea></td>
+				</tr>				
+				<tr><th>fetch_query</th>
+					<td><textarea name="fetch_query" cols=80 rows=6></textarea></td>
+				</tr>
+			</tbody></table>
+			<button class="button" name="action" value="createtype" type="submit">Create type</button>
+		</form>
+	</div>

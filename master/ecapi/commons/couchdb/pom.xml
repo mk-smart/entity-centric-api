@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.mksmart</groupId>
+	<artifactId>ecapi.commons.couchdb</artifactId>
+	<packaging>jar</packaging>
+	<version>${datahub-version}</version>
+	<name>MK:Smart Entity-Centric API : CouchDB libraries</name>
+	<description>Shared libraries for accessing and manipulating CouchDB databases.</description>
+	<inceptionYear>2015</inceptionYear>
+
+	<parent>
+		<groupId>org.mksmart</groupId>
+		<artifactId>ecapi-parent</artifactId>
+		<version>1</version>
+		<relativePath>../..</relativePath>
+	</parent>
+
+	<build>
+	</build>
+
+	<dependencies>
+		<!-- commons tax -->
+		<dependency>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
+			<version>1.6</version> <!-- matches dependency of stanbol.commons.testing -->
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.3.6</version> <!-- compatible with commons-codec 1.6 -->
+		</dependency>
+
+		<!-- REST tax -->
+		<dependency>
+			<groupId>org.apache.wink</groupId>
+			<artifactId>wink-client</artifactId>
+			<version>1.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.wink</groupId>
+			<artifactId>wink-json-provider</artifactId>
+			<version>1.4</version>
+		</dependency>
+
+		<!-- CouchDB tax -->
+		<!-- only re-introduce if necessary, note the conflict on the org.apache.httpcomponents:httpclient version -->
+		<!-- 
+		<dependency> 
+			<groupId>org.ektorp</groupId>
+			<artifactId>org.ektorp</artifactId> 
+			<version>1.4.2</version> 
+		</dependency> 
+		-->
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20140107</version>
+		</dependency>
+
+	</dependencies>
+
+</project>

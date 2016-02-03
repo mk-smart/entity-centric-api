@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app>
+
+	<display-name>MK:Smart Entity-Centric API</display-name>
+
+	<servlet>
+		<servlet-name>CompilerApp</servlet-name>
+		<servlet-class>org.apache.wink.server.internal.servlet.RestServlet
+		</servlet-class>
+		<init-param>
+			<param-name>javax.ws.rs.Application</param-name>
+			<param-value>org.mksmart.ecapi.web.CompilerApplication
+			</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>CompilerApp</servlet-name>
+		<url-pattern>/jit/*</url-pattern>
+	</servlet-mapping>
+
+	<filter>
+		<filter-name>basicAuthenticationFilter</filter-name>
+		<filter-class>org.mksmart.ecapi.web.security.ApiKeyFilter
+		</filter-class>
+	</filter>
+
+	<filter-mapping>
+		<filter-name>basicAuthenticationFilter</filter-name>
+		<url-pattern>/jit/*</url-pattern>
+	</filter-mapping>
+<!--	
+	<login-config>
+  <auth-method>BASIC</auth-method>     
+  <realm-name>Test Realm</realm-name>  
+</login-config>
+-->
+</web-app>

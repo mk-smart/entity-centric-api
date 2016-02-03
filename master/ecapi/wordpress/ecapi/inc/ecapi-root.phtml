@@ -1,0 +1,94 @@
+<?php get_header(); ?>
+<?php 
+$typeexamples = array(
+  "place" => "walton_hall",
+  "postcode" => "MK76AA",
+  "area" => "MK",
+  "district" => "MK7",
+  "sector" => "MK76",
+  "topic" => "bletchley_park",
+  "image" => "16138449533",
+  "geo-point" => "52.033333_-0.7"
+);
+// TODO use example in config parameter
+// TODO input snippet
+?>
+<?php
+$opts = get_option('ecapi_options');
+if( $opts && is_array($opts) ) {
+	$api_root = isset( $opts['ecapi_url'] ) ? $opts['ecapi_url'] : NULL;
+	$swagger_url = isset( $opts['ecapi_swagger'] ) ? $opts['ecapi_swagger'] : NULL; 
+}
+?>
+<style>
+.tt-menu{ background-color:#fff; padding:5px; }
+.tt-suggestion.tt-cursor{ background-color:#0097cf; color:#fff }
+</style>
+<div class="site-content">
+<article
+	class="page type-page status-publish hentry">
+	<header class="entry-header">
+		<h1 class="entry-title">Entity lookup</h1>
+	</header>
+	<p>With the <a href="/tutorials/exploring-data-by-entity/">entity-centric API</a>, the MK Data Hub enables users and applications to obtain data aggregated from multiple, open sources around specific entities (places, topics, etc.). Through this page, you can preview city data for your application to use.</p>
+	<p>To obtain data about an entity, select its type from the drop-down box, enter its identifier (or select a suggested one as you type) and click the Lookup button.</p>
+<!--  Here you can explore aggregated <em>open data</em> about MK-related entities that you know of, such as an administrative region with a postcode. You will need to know what <strong>type</strong> of entity you are looking for, and an <strong>identifier</strong> for it. Enter them in the lookup form below to display aggregated JSON data for the corresponding entity. -->
+</p>
+	<section>
+	<?php if( !empty($api_root) ) :
+		include dirname(__FILE__) . '/../lib/curl-client.php';
+		$rez = doCurl( $api_root, 'GET', NULL, array( 'accept' => 'application/json' ) );
+		$obj = json_decode( $rez['body'] );
+		if( $obj ) sort($obj->subresources);
+		if (isset($_GET['type'])) $type = $_GET['type'];		
+	?>
+	<?php if( $obj ): ?>
+		<div id="ecapi_lookup"><!-- <strong>Type</strong>: --> 
+			<select name="stype" id="stype" style="vertical-align:top">
+				<option value="">--- select a type --</option>
+	<?php 	foreach( $obj->subresources as $subr ) : ?>
+	<?php 		if( isset($type) && strcmp($type, $subr) === 0 ) : ?>
+				<option value="<?php print $subr ?>" selected><?php print  $subr ?></option>
+    <?php 		else : ?>
+				<option value="<?php print $subr ?>"><?php print  $subr ?></option>
+	<?php 		endif; ?>
+	<?php 	endforeach; ?>
+			</select>
+			<!-- <strong>Identifier</strong>: -->
+	<?php
+			$placeholder = "";
+			if (isset($type) && isset($typeexamples[$type])) $placeholder = "e.g. ".$typeexamples[$type];
+	?>
+			<input name="id_value" placeholder="<?php echo $placeholder ?>" size="20" type="search"/>
+			<button class="btn btn-default" name="do_lookup" type="button">Lookup</button>
+			<span class="hider" style="display:none;"><a href="#">Hide output</a></span>
+			<span class="response_throbber" style="display:none;"></span>
+		</div>
+		<div id="ecapi_lookup_result" style="display:none">
+			<h4>Entity ID</h4>
+			<pre id="datauri"></pre>
+			<span class="ext_link"></span>
+			<h4>Data</h4>
+			<pre id="dataraw"></pre>
+		</div>
+	</section>
+<?php 	else : // !empty($obj) ?>
+	<div style="color:#f00">Error: failed to ping entity-centric API at <a href="<?php print $api_root ?>"><?php print $api_root ?></a>. Lookup form could not be created. Please try later or contact the Data Hub administrator.</div>
+<?php 	endif; // !empty($obj) ?>
+<?php endif; // empty($api_root) ?>
+<!--	
+	<p>Tip: if you do not enter any identifier, the service will display a raw JSON representation of the type description.</p> 
+-->
+	<hr/>
+	<p>More information on using these entity data can be found on the <a href="/tutorials/exploring-data-by-entity/" title="Exploring data by entity">tutorial page</a> on exploring data by entity.</p>
+	<h4>Requirements</h4>
+	<p>This page requires a Web browser that <a href="http://caniuse.com/#feat=cors">supports cross-origin resource sharing</a>, e.g. <strong>Firefox 3.5+</strong>, <strong>Chrome 13+</strong>, <strong>Opera 12+</strong>, <strong>Safari 6+</strong>, <strong>IE10+</strong> or <strong>Edge</strong>.</p>
+</article>
+
+</div> <!-- .site-content -->
+
+<script type="text/javascript">
+function urify(s,t){if(t=="postcode"||t=="district"||t=="sector"||t=="area"||t=="lsoa") /* CHE E' STA STRONZATA ??!? */ return s.replace(/ /g,'').toUpperCase();return s.replace(/ /g,'_').replace(/,/g,'_').replace(/__/g,"_").toLowerCase()};(function($){var substringMatcher=function(strs){return function findMatches(q,cb){var matches,substringRegex;matches=[];substrRegex=new RegExp(q,'i');$.each(strs,function(i,str){if(substrRegex.test(str)){matches.push(str)}});cb(matches)}};var autocompletes=[];var initVal=$('[name="stype"]').val();$(function(){$('[name="do_lookup"]').click(function(){$('#ecapi_lookup .hider').hide();$('#ecapi_lookup .response_throbber').show();var id=urify($('[name="id_value"]').val(),$('[name="stype"]').val());var url='<?php print $api_root ?>'+$('[name="stype"]').val()+'/'+id;$.ajax({url:url,dataType:'json',type:'GET',success:function(data){$('#ecapi_lookup_result .ext_link').html('<a href="'+url+'?global=true'+'" target="_blank">Go to resource</a>');$('#dataraw').text(JSON.stringify(data,undefined,2))},error:function(jqXHR,textStatus,errorThrown){$('#dataraw').text('Error: request returned the following '+textStatus+' : '+errorThrown);},complete:function(qXHR,textStatus){$('#datauri').text(url);$('#ecapi_lookup .response_throbber').hide();$('#ecapi_lookup .hider').show();$('#ecapi_lookup_result').slideDown()}})});$('[name="id_value"]').keypress(function(e){if(e.keyCode==13) $('[name="do_lookup"]').click()});$('#ecapi_lookup .hider').click(function(e){e.preventDefault();$(this).hide();$('#ecapi_lookup_result').slideUp()});$('#ecapi_support li a').click(function(e){});$("#stype").change(function(){$('.site-content').block({message:'<h1>Please wait...</h1>'});var wl=window.location.href;var key='type',tv=$('[name="stype"]').val();var re=new RegExp("([?&])"+key+"=.*?(&|$)","i");var separator=wl.indexOf('?')!==-1?"&":"?";window.location.href=wl.match(re)?wl.replace(re,'$1'+key+"="+tv+'$2'):wl+separator+key+"="+tv})});if(initVal){$.ajax({url:'<?php print $api_root ?>'+initVal,dataType:'json',type:'GET',success:function(data){var st=$('[name="stype"]').val();$.each(data.instances,function(i,o){autocompletes.push(o.split('/'+st+'/').pop())});$('[name="id_value"]').typeahead({hint:true,highlight:true,minLength:1},{name:'autocompletes',source:substringMatcher(autocompletes)})}})}})(window.jQuery);
+</script>
+
+<?php get_footer(); ?>

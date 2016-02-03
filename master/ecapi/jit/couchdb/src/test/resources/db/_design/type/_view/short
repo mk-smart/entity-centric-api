@@ -1,0 +1,16 @@
+{
+   "total_rows": 2,
+   "offset": 0,
+   "rows": [
+      {
+         "id": "http://purl.org/net/mlo/qualification",
+         "key": "http://purl.org/net/mlo/qualification",
+         "value": "academic-degree"
+      },
+      {
+         "id": "http://purl.org/ns/bibo#Book",
+         "key": "http://purl.org/ns/bibo#Book",
+         "value": "biblio"
+      }
+   ]
+}

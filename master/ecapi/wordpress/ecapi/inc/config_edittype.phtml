@@ -1,0 +1,44 @@
+<?php
+if( empty($_GET['id']) )
+	die("No configuration ID set.");
+if( empty($_GET['typeid']) )
+	die("No supported type ID set.");
+$_id = $_GET['id'];
+$typeid = $_GET['typeid'];
+$opts = get_option('ecapi_options');
+$dbms = new couchdb(
+	$opts['ecapi_config_db_url'], $opts['ecapi_config_db_name'], 
+	$opts['ecapi_config_db_username'],$opts['ecapi_config_db_password']
+);
+$docjson = $dbms->getDoc($_id);
+$docjson = $docjson['data'];
+
+if( !isset($docjson->{"mks:types"}->$typeid) )
+	die("Supplied type ID doesn't match.");
+?>  
+	<div id="main">
+		<h1><?php print $_id ?></h1>
+		<h2><?php print $typeid ?></h2>
+		<button class="button" name="view" type="button" onclick="window.location.href='?page=ecapi-config&action=view&id=<?php print urlencode($_id) ?>'">View</button>
+		<form action="" method="POST">
+			<input type="hidden" name="page" value="ecapi-config">
+			<input type="hidden" name="id" value="<?php echo $_id ?>">
+			<input type="hidden" name="typeid" value="<?php echo $typeid ?>">
+			<table class="wp-list-table widefat"><tbody>
+				<tr><th>_rev</th>
+					<td><input type="text" placeholder="config doc id" size="64" name="_rev" value="<?php echo $docjson->_rev?>" readonly></td>
+				</tr>
+				<tr><th>localise</th>
+					<td><textarea name="localise" cols=80 rows=6><?php echo $docjson->{"mks:types"}->$typeid->localise ?></textarea></td>
+				</tr>
+				<tr><th>query_text</th>
+					<td><textarea name="query_text" cols=80 rows=6><?php echo $docjson->{"mks:types"}->$typeid->query_text ?></textarea></td>
+				</tr>				
+				<tr><th>fetch_query</th>
+					<td><textarea name="fetch_query" cols=80 rows=6><?php echo $docjson->{"mks:types"}->$typeid->fetch_query ?></textarea></td>
+				</tr>
+			</tbody></table>
+			<button class="button" name="reset" type="button" onclick="window.location.href='?page=ecapi-config&action=edittype&id=<?php print urlencode($_id) ?>&typeid=<?php print urlencode($typeid) ?>'">Reset</button>
+			<button class="button" name="action" value="savetype" type="submit">Save</button>
+		</form>
+	</div>

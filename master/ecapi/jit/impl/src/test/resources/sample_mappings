@@ -1,0 +1,13 @@
+=======
+KIS http://data.linkedu.eu/kis/course/10007773/w01
+OU http://data.open.ac.uk/qualification/w01
+=======
+http://data.southampton.ac.uk/JACS/L2
+JACS code southampton/KIS http://data.southampton.ac.uk/JACS/L2.21
+
+KIS:
+http://data.linkedu.eu/kis/ontology/courseUrl 	http://www.ecs.soton.ac.uk/ucas/G400
+http://data.linkedu.eu/kis/ontology/ucasCourseId 	G400 
+
+Southampton
+http://id.southampton.ac.uk/ns/bannerUCASCode  http://id.southampton.ac.uk/JACS/G400

@@ -1,0 +1,9 @@
+{
+   "_id": "_design/catalogue",
+   "language": "javascript",
+   "views": {
+       "datasets": {
+           "map": "function(doc){if(doc.type=='provider-spec') emit(doc._id,{service_url:doc['http://rdfs.org/ns/void#sparqlEndpoint'],cache_lifetime:doc['mks:cache-lifetime']})}"
+       }
+   }
+}

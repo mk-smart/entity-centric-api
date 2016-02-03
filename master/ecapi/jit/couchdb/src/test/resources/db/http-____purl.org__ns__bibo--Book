@@ -1,0 +1,6 @@
+{
+   "_id": "http://purl.org/ns/bibo#Book",
+   "_rev": "3-3e1a32eaa0fdda68042e231ba55d07c1",
+   "type": "type-spec",
+   "mks:short": "biblio"
+}

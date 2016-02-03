@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.mksmart</groupId>
+		<artifactId>ecapi-parent</artifactId>
+		<version>1</version>
+		<relativePath>..</relativePath>
+	</parent>
+
+	<groupId>org.mksmart</groupId>
+	<artifactId>ecapi.launcher</artifactId>
+	<packaging>jar</packaging>
+	<name>MK:Smart Entity-Centric API : standalone launcher</name>
+	<version>${datahub-version}</version>
+	<description>Instant MK:Smart Entity-Centric API webapp and standalone launcher</description>
+
+	<properties>
+		<!-- plugins -->
+		<maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
+	</properties>
+
+	<build>
+
+		<plugins>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>${maven.assembly.plugin.version}</version>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+					<finalName>ecapi.launcher-${datahub-version}</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+					<archive>
+						<manifest>
+							<mainClass>org.mksmart.ecapi.run.standalone</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+				<executions>
+					<execution>
+						<id>make-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+		</plugins>
+
+		<resources>
+			<resource>
+				<directory>src/main/java</directory>
+				<includes>
+					<include>**/*.java</include>
+					<include>**/*.xml</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+			<resource>
+				<directory>src/main/webapp</directory>
+				<filtering>true</filtering>
+			</resource>
+			<resource>
+				<directory>src/main/webroot</directory>
+				<includes>
+					<include>**/*.html</include>
+				</includes>
+			</resource>
+		</resources>
+
+	</build>
+
+	<dependencies>
+
+		<!-- project tax -->
+		<dependency>
+			<groupId>org.mksmart</groupId>
+			<artifactId>ecapi.access</artifactId>
+			<version>${datahub-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mksmart</groupId>
+			<artifactId>ecapi.core</artifactId>
+			<version>${datahub-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mksmart</groupId>
+			<artifactId>ecapi.couchdb</artifactId>
+			<version>${datahub-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mksmart</groupId>
+			<artifactId>ecapi.jit-impl</artifactId>
+			<version>${datahub-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mksmart</groupId>
+			<artifactId>ecapi.web</artifactId>
+			<version>${datahub-version}</version>
+		</dependency>
+
+		<!-- Embedded server -->
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-server</artifactId>
+			<version>${org.eclipse.jetty.version}</version>
+		</dependency>
+		<!-- <dependency> <groupId>org.eclipse.jetty</groupId> <artifactId>jetty-servlet</artifactId> 
+			<version>${org.eclipse.jetty.version}</version> </dependency> -->
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-webapp</artifactId>
+			<version>${org.eclipse.jetty.version}</version>
+		</dependency>
+
+		<!-- startup tax -->
+		<dependency>
+			<groupId>commons-cli</groupId>
+			<artifactId>commons-cli</artifactId>
+			<version>1.2</version>
+		</dependency>
+
+	</dependencies>
+
+
+</project>

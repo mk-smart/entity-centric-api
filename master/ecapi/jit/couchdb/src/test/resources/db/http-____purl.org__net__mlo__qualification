@@ -1,0 +1,25 @@
+{
+   "_id": "http://purl.org/net/mlo/qualification",
+   "_rev": "13-377e6f09bc88e44510e7c3c1cce641cc",
+   "type": "type-spec",
+   "mks:short": "academic-degree",
+   "mks:support": {
+       "authoritative": [
+           "http://data.open.ac.uk",
+           "http://sparql.data.southampton.ac.uk"
+       ],
+       "trusted": [
+           "http://data.linkedu.eu/kis/query"
+       ]
+   },
+   "mks:unifier": [
+       {
+           "authority": "http://xcri.org/profiles/catalog/1.2/awardedBy",
+           "attribute": "http://purl.org/vocab/aiiso/schema#code"
+       },
+       {
+           "authority": "http://courseware.rkbexplorer.com/ontologies/courseware#taught-at",
+           "attribute": "http://data.linkedu.eu/kis/ontology/courseId"
+       }
+   ]
+}

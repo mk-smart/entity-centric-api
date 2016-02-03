@@ -1,0 +1,13 @@
+{
+   "_id": "_design/compile",
+   "_rev": "14-dff64de3c71ab9f55e7487190ae9e430",
+   "language": "javascript",
+   "views": {
+       "public": {
+           "map": "function(doc){ switch(doc.type){ case 'http://purl.org/vocab/aiiso/schema#Course': emit('http://data.linkedu.eu/kis/ontology/courseId',doc['http://purl.org/vocab/aiiso/schema#code']); break; } }"
+       },
+       "typemaps": {
+           "map": "function(doc){ if(doc.type=='provider-spec') for(var ty in doc['mks:types']) emit(doc['mks:types'][ty],{}); }"
+       }
+   }
+}

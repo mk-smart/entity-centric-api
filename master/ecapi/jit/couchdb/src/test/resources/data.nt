@@ -1,0 +1,37 @@
+# Ordnance Survey snippet
+
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/spatialrelations/within>	<http://data.ordnancesurvey.co.uk/id/postcodedistrict/MK7> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://www.w3.org/2003/01/geo/wgs84_pos#lat>	"52.023877"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/postcode/LH>	"E18000009" .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/postcode/positionalQualityIndicator>	<http://data.ordnancesurvey.co.uk/ontology/postcode/pqi/10> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/postcode/PQ>	"10" .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/postcode/ward>	<http://data.ordnancesurvey.co.uk/id/7000000000041911> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://www.w3.org/2000/01/rdf-schema#label>	"MK7 7NY" .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>	<http://data.ordnancesurvey.co.uk/ontology/postcode/PostcodeUnit> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/spatialrelations/within>	<http://data.ordnancesurvey.co.uk/id/postcodearea/MK> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://www.w3.org/2004/02/skos/core#notation>	"MK7 7NY"^^<http://data.ordnancesurvey.co.uk/ontology/postcode/Postcode> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/postcode/nhsRegionalHA>	<http://statistics.data.gov.uk/id/statistical-geography/E19000002> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/postcode/nhsHA>	<http://statistics.data.gov.uk/id/statistical-geography/E18000009> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/spatialrelations/within>	<http://data.ordnancesurvey.co.uk/id/postcodesector/MK77> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/postcode/country>	<http://data.ordnancesurvey.co.uk/id/country/england> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/postcode/district>	<http://data.ordnancesurvey.co.uk/id/7000000000038413> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/spatialrelations/northing>	"236970"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/postcode/RH>	"E19000002" .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://data.ordnancesurvey.co.uk/ontology/spatialrelations/easting>	"489939"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<http://data.ordnancesurvey.co.uk/id/postcodeunit/MK77NY>	<http://www.w3.org/2003/01/geo/wgs84_pos#long>	"-0.690605"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+
+#
+
+<http://opendatacommunities.org/data/housing-market/help-to-buy/num-loans/loanType/2013-04-01T00:00:00/P15M/E06000042-MK77/equity-loans>
+<http://opendatacommunities.org/def/ontology/geography/refArea> <http://opendatacommunities.org/id/geography/postcode/la-postcodesector/E06000042-MK77> .
+
+<http://opendatacommunities.org/data/housing-market/help-to-buy/num-loans/loanType/2013-04-01T00:00:00/P16M/E06000042-MK77/equity-loans>
+<http://opendatacommunities.org/def/ontology/geography/refArea> <http://opendatacommunities.org/id/geography/postcode/la-postcodesector/E06000042-MK77> .
+
+<http://opendatacommunities.org/data/housing-market/help-to-buy/num-loans/loanType/2013-04-01T00:00:00/P17M/E06000042-MK77/equity-loans>
+<http://opendatacommunities.org/def/ontology/geography/refArea> <http://opendatacommunities.org/id/geography/postcode/la-postcodesector/E06000042-MK77> .
+
+<http://opendatacommunities.org/data/housing-market/help-to-buy/num-loans/loanType/2013-04-01T00:00:00/P18M/E06000042-MK77/equity-loans>
+<http://opendatacommunities.org/def/ontology/geography/refArea> <http://opendatacommunities.org/id/geography/postcode/la-postcodesector/E06000042-MK77> .
+
+<http://opendatacommunities.org/id/geography/postcode/la-postcodesector/E06000042-MK77> <http://data.ordnancesurvey.co.uk/ontology/postcode/PostcodeSector> <http://data.ordnancesurvey.co.uk/id/postcodesector/MK77> .

@@ -1,0 +1,32 @@
+<?php 
+if( empty($_GET['id']) )
+	die("No configuration ID set.");
+if( empty($_GET['typeid']) )
+	die("No supported type ID set.");
+$_id = $_GET['id'];
+$typeid = $_GET['typeid'];
+$opts = get_option('ecapi_options');
+$dbms = new couchdb(
+	$opts['ecapi_config_db_url'], $opts['ecapi_config_db_name'], 
+	$opts['ecapi_config_db_username'],$opts['ecapi_config_db_password']
+);
+$docjson = $dbms->getDoc($_id);
+$docjson = $docjson['data'];
+
+if( !isset($docjson->{"mks:types"}->$typeid) )
+	die("Requested type ID not found. Cannot delete.");
+?>   
+	<h1><?php print $_id ?></h1>
+	Are you sure you want to remove support for type '<?php print $typeid ?>' from this dataset?
+	<form action="" method="POST">
+		<input type="hidden" name="page" value="ecapi-config">
+		<input type="hidden" name="id" value="<?php echo $_id ?>">
+		<input type="hidden" name="typeid" value="<?php echo $typeid ?>">
+		<table class="wp-list-table widefat"><tbody>
+			<tr><th>_rev</th>
+				<td><input type="text" placeholder="config doc id" size="64" name="_rev" value="<?php echo $docjson->_rev?>" readonly></td>
+			</tr>
+		</tbody></table>
+		<button class="button" name="view" type="button" onclick="window.location.href='?page=ecapi-config&action=view&id=<?php print urlencode($_id) ?>'">Cancel</button>
+		<button class="button" name="action" value="deletetype" type="submit">Delete</button>
+	</form>

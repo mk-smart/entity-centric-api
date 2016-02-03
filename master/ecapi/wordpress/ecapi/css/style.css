@@ -1,0 +1,23 @@
+/* Swagger overrides */
+.swagger-ui-wrap li:hover a{ background:none }
+.swagger-ui-wrap ul{ margin-left:0; }
+.swagger-ui-wrap .heading h2{ margin:0 }
+
+.tt-suggestion{ background-color:#F0FFFC; min-width:240px; padding:0 3px }
+.tt-suggestion:hover{ background-color:#0097cf; color:#fff; cursor:default }
+
+#ecapi_lookup{ margin: 10px 0 }
+#ecapi_lookup button{ min-height:40px; font-size:16px }
+#content #ecapi_lookup input{ margin:0 }
+#ecapi_lookup select{ padding:4px }
+#ecapi_lookup span.hider,
+#ecapi_lookup span.response_throbber{ float: right; margin:10px }
+#ecapi_lookup span.response_throbber { background-image: url("../lib/swagger-ui/images/throbber.gif"); clear: none; display: block; height: 16px; width: 128px; }
+#ecapi_lookup span.twitter-typeahead{ vertical-align:top }
+
+#ecapi_lookup_result pre{ background-color:#fcf6db; border:1px solid #e5e0c6; padding:5px }
+#ecapi_lookup_result .ext_link{ float:right; margin-right:15px }
+#ecapi_lookup_result #dataraw{max-height:400px }
+#ecapi_lookup_result #datauri{ margin-bottom:0 }
+
+#ecapi_support li{ display:inline; list-style-type:none; padding-right:15px }

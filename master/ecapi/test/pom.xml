@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.mksmart</groupId>
+		<artifactId>ecapi-parent</artifactId>
+		<version>1</version>
+		<relativePath>..</relativePath>
+	</parent>
+
+	<groupId>org.mksmart</groupId>
+	<artifactId>ecapi.test</artifactId>
+	<packaging>jar</packaging>
+	<name>MK:Smart Entity-Centric API : integration tests</name>
+	<version>${datahub-version}</version>
+
+	<properties>
+
+		<!-- Set this to run the server on a specific port -->
+		<http.port></http.port>
+
+		<!-- Set this to run tests against an existing server instance -->
+		<test.server.url></test.server.url>
+
+		<!-- Options for the VM that executes our runnable jar -->
+		<jar.executor.vm.options>-Dlog4j.configuration=file:log4j.properties</jar.executor.vm.options>
+
+		<!-- Options for the runnable jar itself -->
+		<jar.executor.program.options>-c ecapi.properties</jar.executor.program.options>
+
+		<!-- Set to true to keep the runnable jar running - useful to debug tests -->
+		<keepJarRunning>false</keepJarRunning>
+
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-runnable-jar</id>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<phase>process-resources</phase>
+						<configuration>
+							<includeArtifactIds>ecapi.launcher</includeArtifactIds>
+							<excludeTransitive>true</excludeTransitive>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>false</overWriteSnapshots>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.7</version>
+				<executions>
+					<execution>
+						<id>copy-resources</id>
+						<!-- here the phase you need -->
+						<phase>validate</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/launchdir</outputDirectory>
+
+							<resources>
+
+								<resource>
+									<directory>src/test/resources</directory>
+									<filtering>true</filtering>
+								</resource>
+
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<!-- Find free ports to run our server -->
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>reserve-server-port</id>
+						<goals>
+							<goal>reserve-network-port</goal>
+						</goals>
+						<phase>process-resources</phase>
+						<configuration>
+							<portNames>
+								<portName>http.port</portName>
+							</portNames>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<systemPropertyVariables>
+						<test.server.url>${test.server.url}</test.server.url>
+						<jar.executor.server.port>${http.port}</jar.executor.server.port>
+						<jar.executor.vm.options>${jar.executor.vm.options}</jar.executor.vm.options>
+						<jar.executor.program.options>${jar.executor.program.options}</jar.executor.program.options>
+						<jar.executor.jar.folder>${project.basedir}/target/dependency</jar.executor.jar.folder>
+						<jar.executor.jar.name.regexp>ecapi.launcher\-.*.jar$</jar.executor.jar.name.regexp>
+						<jar.executor.workingdirectory>${project.build.directory}/launchdir</jar.executor.workingdirectory>
+						<keepJarRunning>${keepJarRunning}</keepJarRunning>
+						<server.ready.timeout.seconds>180</server.ready.timeout.seconds>
+						<server.ready.path.1>/:This is:Accept:text/html</server.ready.path.1>
+					</systemPropertyVariables>
+					<excludes>
+					</excludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.mksmart</groupId>
+			<artifactId>ecapi.launcher</artifactId>
+			<version>${datahub-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.stanbol</groupId>
+			<artifactId>org.apache.stanbol.commons.testing.jarexec</artifactId>
+			<version>0.12.0</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.stanbol</groupId>
+			<artifactId>org.apache.stanbol.commons.testing.http</artifactId>
+			<version>0.12.0</version>
+			<scope>compile</scope>
+		</dependency>
+	</dependencies>
+
+</project>

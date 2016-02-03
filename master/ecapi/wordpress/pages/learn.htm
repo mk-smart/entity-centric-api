@@ -1,0 +1,85 @@
+<!-- Swagger stuff -->
+<link rel='stylesheet' id='swaggerui-screen-css'  href='wp-content/plugins/ecapi/lib/swagger-ui/css/screen.css' type='text/css' media='all'/>
+<script type='text/javascript' src='wp-content/plugins/ecapi/lib/swagger-ui/lib/shred.bundle.js?ver=4.0.1'></script>
+<script type='text/javascript' src='wp-content/plugins/ecapi/lib/swagger-ui/lib/jquery.slideto.min.js?ver=4.0.1'></script>
+<script type='text/javascript' src='wp-content/plugins/ecapi/lib/swagger-ui/lib/jquery.wiggle.min.js?ver=4.0.1'></script>
+<script type='text/javascript' src='wp-content/plugins/ecapi/lib/swagger-ui/lib/jquery.ba-bbq.min.js?ver=4.0.1'></script>
+<script type='text/javascript' src='wp-content/plugins/ecapi/lib/swagger-ui/lib/underscore-min.js?ver=4.0.1'></script>
+<script type='text/javascript' src='wp-content/plugins/ecapi/lib/swagger-ui/lib/backbone-min.js?ver=4.0.1'></script>
+<script type='text/javascript' src='wp-content/plugins/ecapi/lib/swagger-ui/lib/handlebars-1.0.0.js?ver=4.0.1'></script>
+<script type='text/javascript' src='wp-content/plugins/ecapi/lib/swagger-ui/lib/swagger.js?ver=2.0.47'></script>
+<script type='text/javascript' src='wp-content/plugins/ecapi/lib/swagger-ui/lib/swagger-client.js?ver=4.0.1'></script>
+<script type='text/javascript' src='wp-content/plugins/ecapi/lib/swagger-ui/swagger-ui.min.js?ver=4.0.1'></script>
+<script type='text/javascript' src='wp-content/plugins/ecapi/lib/swagger-ui/lib/highlight.7.3.pack.js?ver=4.0.1'></script>
+<!-- END Swagger stuff -->
+
+[insert_php]$opts = get_option('ecapi_options');[/insert_php]
+
+<section>
+<p>Alongside obtaining data by <a href="developers-api" title="Reading Feeds: the Developers’ API">reading feeds</a>, the MK Data Hub provides an interface for reading streams of integrated data that are aggregated from a multitude of datasets registered with the Data Catalogue. The aggregation logic revolves around presenting all the data that the user has access to regarding a specific <em>entity</em> (e.g. a location in Milton Keynes). This way, the user is not required to specify the URL or name of a data source or feed.
+
+This document is a guide for developers who do not require to tweak their data-intensive applications to use specific data-sources.</p>
+</section>
+<section>
+  <h2>Getting started</h2>
+  <ol>
+    <li>Arm yourself with an HTTP client (e.g. <strong>curl</strong>, your own client code, or even this browser) and you're good to go.</li>
+    <li>Perform an HTTP GET request to <a href="[insert_php] echo $opts['ecapi_url']; [/insert_php]">[insert_php] echo $opts['ecapi_url']; [/insert_php]</a> e.g.</li>
+    <code>curl [insert_php] echo $opts['ecapi_url']; [/insert_php]</code>
+    </ol>
+  <p>If the response is JSON content of the type
+    <pre>{
+  "subresources": [ ... ],
+  "comment": "Beware: I live!",
+  "live": true
+}</pre>
+    then the API is alive and reachable.</p>
+  <p>In order to explore the data published by the API, you need to be able to identify the entity to obtain data about. Identifying an entity essentially means constructing a URI that is submitted to the API. Note that the <a href="https://datahub.beta.mksmart.org/entity-lookup/">Entity Lookup</a> Facility provides a way to simply construct requests to the entity-centric API. 
+<!-- This can be done either by <em>type and property</em> or by <em>property</em> alone.</p> -->
+</section>
+<section>
+  <h2>Exploring by type and identifier</h2>
+  <!--<p>The most general way to identify an entity is by combining its type with the name of a property and a value for it, which altogether uniquely identifies the entity. For example, the equivalent of "describe the British administrative sector whose postcode is MK77" has the URI:
+-->
+<p>Making requests to the entity-centric API is relatively simple, as long as you know the type and identifier of the entity about which information is required. For example, getting information about the geographic sector "MK77" is simply done by calling the URI:
+
+  <code>[insert_php] echo $opts['ecapi_url']; [/insert_php]sector/MK77</code>
+  </p>
+where:
+<ul>
+  <li><code>sector</code> here is the type of the entity. The <a href="https://datahub.beta.mksmart.org/entity-lookup/">Entity Lookup</a> service lists the types that are covered by the API, and the <a href="https://datahub.beta.mksmart.org/data-catalogue/">data catalogue</a> provides links to the types datasets provide. It might be <code>postcode</code>, <code>place</code> or <code>topic</code> for example.</li>
+  <li><code>MK77</code> here is the identifier of the entity to be retrieved. The format of the identifier is dependent on the type. A <code>postcode</code> for example might rather be <code>MK76AA</code>, a <code>place</code> or a <code>topic</code> are identified by their name (e.g. <code>walton_hall</code>, <code>computer</code>), while a <code>geo-point</code> is identified by its coordinate (e.g. <code>52.03333_-0.7</code>).</li>
+  </ul>
+</section>
+<section>
+  <!-- <h2>REST API specification</h2> -->
+  <div class="swagger-section">
+    <p>The following interactive API specification allows you to try out calls to the MK:Smart entity API right before you add them to your development environment. Click on the list items below to see the supported operations and parameters. <a href="http://swagger.io" target="_blank">Powered by Swagger</a>.</p>
+    <div id="swagger-ui-container" class="swagger-ui-wrap" style="display:inline"></div>
+    </div>
+</section>
+<section>
+  <h2>Response format</h2>
+  <p>All the services return bespoke, simple JSON, aggregating information from multiple sources.
+The result of calls such as the ones of the examples above will return a simple JSON object with attributes coming from the original sources. </p>
+  <pre lang="json">
+    {
+  property1: [
+    {
+      "sub-property1": ["value1", "value2", ...],
+      "sub-property2": ["value3", "value4", ...].
+      ...
+    },
+    ...
+  ],
+  property2: [...
+}</pre>
+</section>
+
+<script type="text/javascript">
+(function($){$(function(){var url='[insert_php]
+$opts = get_option('ecapi_options');
+echo $opts['ecapi_swagger'];
+[/insert_php]';window.swaggerUi=new SwaggerUi({url:url,dom_id:"swagger-ui-container",supportedSubmitMethods:['get','post','put','delete'],onComplete:function(swaggerApi,swaggerUi){if(typeof initOAuth=="function"){}
+$('pre code').each(function(i,e){hljs.highlightBlock(e)});},onFailure:function(data){log("Unable to Load SwaggerUI");},docExpansion:"list",sorter:"alpha"});window.swaggerUi.load();});})(window.jQuery);
+</script>

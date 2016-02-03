@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.mksmart</groupId>
+	<artifactId>ecapi.core</artifactId>
+	<packaging>jar</packaging>
+	<version>${datahub-version}</version>
+	<name>MK:Smart Entity-Centric API : core</name>
+	<inceptionYear>2015</inceptionYear>
+
+	<parent>
+		<groupId>org.mksmart</groupId>
+		<artifactId>ecapi-parent</artifactId>
+		<version>1</version>
+		<relativePath>../..</relativePath>
+	</parent>
+
+	<build>
+	</build>
+
+	<dependencies>
+	
+		<!-- commons tax -->
+		<dependency>
+			<groupId>commons-configuration</groupId>
+			<artifactId>commons-configuration</artifactId>
+			<version>1.10</version>
+		</dependency>
+		
+	</dependencies>
+
+</project>
