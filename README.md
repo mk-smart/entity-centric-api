@@ -12,11 +12,11 @@ To __run__ the API you will need a JRE 1.7 and a running instance of [CouchDB](h
 
 ## Building the API
 
-From the root source directory type
+From the root source directory, it's just
 
     $ mvn install
 
-Since some unit tests rely upon the availability of online resources, it may sometimes be a good idea to skip tests. To do so, use
+Since there are still some unit tests that rely upon the availability of online resources (yes I know... sorry, I'll get rid of them eventually), it may sometimes be convenient to skip tests. To do so, use
 
     $ mvn install -Dmaven.test.skip=true
 
