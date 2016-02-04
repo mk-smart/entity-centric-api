@@ -2,7 +2,7 @@
 
 This is a standalone server of a RESTful API for exposing integrated linked data.
 
-This implementation is in Java and entirely Maven-based. There are no hardcoded dependency files in the project, but you need to be online for Maven to download them and assemble the API.
+This implementation is in Java and entirely Maven-based. There are no external dependency files bundled with the project, but you need to be online for Maven to download them and assemble the API.
 
 ## Requirements
 
