@@ -1,6 +1,8 @@
 # MK:Smart entity-centric API
 
-This is a Maven project. Not a single JAR file has to be manually downloaded to assemble the project and its dependencies. Yep that's right.
+This is a standalone server of a RESTful API for exposing integrated linked data.
+
+This implementation is in Java and entirely Maven-based. There are no hardcoded dependency files in the project, but you need to be online for Maven to download them and assemble the API.
 
 ## Requirements
 
