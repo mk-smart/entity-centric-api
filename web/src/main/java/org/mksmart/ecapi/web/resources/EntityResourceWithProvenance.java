@@ -1,6 +1,5 @@
 package org.mksmart.ecapi.web.resources;
 
-import java.net.URI;
 import java.util.Set;
 
 import javax.ws.rs.DefaultValue;
@@ -17,14 +16,13 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mksmart.ecapi.api.DebuggableEntityCompiler;
 import org.mksmart.ecapi.api.Entity;
 import org.mksmart.ecapi.api.id.GlobalURI;
-import org.mksmart.ecapi.api.provenance.PropertyPath;
-
-import com.hp.hpl.jena.vocabulary.RDF;
+import org.mksmart.ecapi.api.id.IdGenerator;
+import org.mksmart.ecapi.web.format.JsonProvenanceDataSerializer;
+import org.mksmart.ecapi.web.util.UriRewriter;
 
 @Path("/entity")
 public class EntityResourceWithProvenance extends EntityResource {
@@ -56,33 +54,13 @@ public class EntityResourceWithProvenance extends EntityResource {
             if (e == null) {
                 rb = Response.status(Status.NOT_FOUND).entity("{ found: false }");
             } else {
-                JSONObject mainObj = new JSONObject();
-                JSONArray jProv = new JSONArray();
-                mainObj.put("@id", gu);
-                mainObj.put("description", "Provenance information for properties of entity <" + gu + ">");
-                for (String ds : e.getProvenanceMap().keySet()) {
-                    JSONObject jProvT = new JSONObject();
-                    JSONArray jProps = new JSONArray();
-                    jProvT.put("dataset", ds);
-                    for (PropertyPath path : e.getContributedProperties(ds)) {
-                        String spath = "";
-                        for (URI prop : path) {
-                            String s = prop.toString();
-                            if (!("@types".equals(s) || RDF.type.getURI().equals(s))) {
-                                if (!spath.isEmpty()) spath += "/";
-                                spath += "<" + s + ">";
-                            }
-                        }
-                        if (!spath.isEmpty()) jProps.put(spath);
-                    }
-                    jProvT.put("attributes", jProps);
-                    jProv.put(jProvT);
-                }
-                mainObj.put("provenance", jProv);
-                rb = Response.ok(mainObj);
+                @SuppressWarnings("rawtypes")
+                UriRewriter rewriter = global ? new UriRewriter(
+                        (IdGenerator) servletContext.getAttribute(IdGenerator.class.getName())) : null;
+                JSONObject serial = JsonProvenanceDataSerializer.serialize(e, gu, rewriter);
+                rb = Response.ok(serial);
             }
         }
-
         handleCors(rb);
         return rb.build();
     }

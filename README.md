@@ -26,7 +26,7 @@ There is a standalone JAR distribution with an embedded Jetty server. After buil
 
     $ cd standalone/target
 
-There you will find a file called `ecapi.launcher-[version].jar`. You can run this JAR on the desired HTTP port.
+There you will find a file called `ecapi.launcher-[version].jar`. You can run this JAR on the desired HTTP port (mandatory, as there is no default port).
 	
     $ java -jar ecapi.launcher-[version].jar -c [config_file] -p [port]
 

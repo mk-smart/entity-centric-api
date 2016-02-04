@@ -138,9 +138,12 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
             }
         }
 
-        log.debug("Validating cache...");
-        Set<TargetedQuery> hits = cache.getCacheHits(queries);
-        log.debug(" ... got {} cache hits", hits.size());
+        Set<TargetedQuery> hits = new HashSet<>();
+        if (cache != null) {
+            log.debug("Validating cache...");
+            hits = cache.getCacheHits(queries);
+            log.debug(" ... got {} cache hits", hits.size());
+        }
 
         // Scan the query plan again and look for matches with the cache hits
         Map<URI,List<Query>> filtered = new HashMap<>();

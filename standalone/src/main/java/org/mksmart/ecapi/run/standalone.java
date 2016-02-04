@@ -86,6 +86,15 @@ public class standalone {
             CommandLine cmd = null;
             try {
                 cmd = parser.parse(options, args);
+
+                String[] args = cmd.getArgs();
+                if (args.length > 0) {
+                    if ("init".equals(args[0])) {
+                        log.error("Requested init task but this is not implemented yet.");
+                        System.exit(1);
+                    }
+                }
+
                 if (cmd.hasOption('h')) help();
                 if (cmd.hasOption('c')) {
                     String confpath = cmd.getOptionValue('c');
@@ -159,6 +168,9 @@ public class standalone {
             Store<?,?> stor = (Store<?,?>) sctx.getAttribute(Store.class.getName());
             Cache cache = null;
             if (stor instanceof FragmentPerQueryStore) cache = new CacheImpl(dp, (FragmentPerQueryStore) stor);
+            else log.warn("Entity store implementation '{}' does not support lookahead of cache hits.", stor
+                    .getClass().getName());
+            if (cache == null) log.warn("Could not initialise cache. All queries will be performed fresh.");
             sctx.setAttribute(DebuggableEntityCompiler.class.getName(), new EntityCompilerImpl(ep, ctlg,
                     cache, stor));
         } catch (IllegalStateException | ClientAuthenticationException ex) {
@@ -180,7 +192,8 @@ public class standalone {
     @SuppressWarnings("rawtypes")
     private static void initStore(WebAppContext wactx, Config config) {
         Store store;
-        String scname = config.asProperties().getProperty("store.class", _DEFAULT_STORE_CLASSNAME);
+        String prop = "store.class";
+        String scname = config.asProperties().getProperty(prop, _DEFAULT_STORE_CLASSNAME);
         Class<? extends Store> storeClazz;
         if (config.getStorageDbName() == null || config.getStorageDbName().isEmpty()) {
             log.warn("Storage DB name not set. ECAPI will be run stateless.");
@@ -194,7 +207,8 @@ public class standalone {
                           + Store.class.getCanonicalName();
             log.error(" ### FATAL ### : " + errMsg, scname);
             log.error("If you do not know which class name to use for the store, "
-                      + "unset the 'store.class' parameter in your properties file to launch a stateless runtime.");
+                      + "unset the '{}' parameter in your properties file to launch a stateless runtime.",
+                prop);
             log.error("Alternatively, refer to the ECAPI documentation for legal store implementation names.");
             log.error("Exiting now");
             System.exit(STORE_INITIALIZE);

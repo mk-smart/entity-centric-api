@@ -34,10 +34,6 @@ public class UriRewriter {
         this.idgen = idgen;
     }
 
-    private URI getGlobalProperty(URI property) {
-        return URI.create(idgen.createPropertyId(property));
-    }
-
     /**
      * FIXME reintroduce support for aliases
      * 
@@ -62,15 +58,15 @@ public class UriRewriter {
             Set<RDFNode> newValues = new HashSet<>();
             for (RDFNode nod : entry2.getValue())
                 newValues.add(rewrite(nod, base));
-            log.trace("Setting values for property <{}>", getGlobalProperty(entry2.getKey()));
-            e_rewr.setValues(getGlobalProperty(entry2.getKey()), newValues);
+            log.trace("Setting values for property <{}>", rewriteProperty(entry2.getKey()));
+            e_rewr.setValues(rewriteProperty(entry2.getKey()), newValues);
         }
         // Rewrite entity references
         for (Entry<URI,Set<Entity>> entry2 : e.getEAttributes().entrySet()) {
             Set<Entity> newValues = new HashSet<>();
             for (Entity nod : entry2.getValue())
                 newValues.add(rewrite(nod, base));
-            e_rewr.setEValues(getGlobalProperty(entry2.getKey()), newValues);
+            e_rewr.setEValues(rewriteProperty(entry2.getKey()), newValues);
         }
         log.trace("Rewrote Entity in {} ms", System.currentTimeMillis() - b4);
         return e_rewr;
@@ -134,6 +130,10 @@ public class UriRewriter {
         }
         rdfRsrc = ResourceFactory.createResource(u);
         return rdfRsrc;
+    }
+
+    public URI rewriteProperty(URI property) {
+        return URI.create(idgen.createPropertyId(property));
     }
 
 }
