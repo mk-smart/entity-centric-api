@@ -38,4 +38,4 @@ To use a custom log configuration, set VM parameter -Dlog4j.configuration=file:l
 
 To debug in Eclipse:
 
-    $ java -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8453,server=y,suspend=n -Dhttp.proxyHost=wwwcache.open.ac.uk -Dhttp.proxyPort=80 -Dlog4j.configuration=file:log4j.properties -jar ecapi.launcher-[version].jar -c [config_file] -p [port]
+    $ java -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8453,server=y,suspend=n -Dlog4j.configuration=file:log4j.properties -jar ecapi.launcher-[version].jar -c [config_file] -p [port]
