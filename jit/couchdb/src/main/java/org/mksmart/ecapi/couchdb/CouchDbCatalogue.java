@@ -54,6 +54,23 @@ public class CouchDbCatalogue implements Catalogue {
     }
 
     @Override
+    public Map<URI,String> getUuids(URI... datasetIds) {
+        Map<URI,String> result = new HashMap<>();
+        JSONObject dsMap = documentProvider.getView("catalogue", "datasets");
+        JSONArray rows = dsMap.getJSONArray("rows");
+        for (int i = 0; i < rows.length(); i++) {
+            JSONObject row = rows.getJSONObject(i);
+            URI dsid = URI.create(row.getString("key"));
+            JSONObject dat = row.getJSONObject("value");
+            if (dat.has("catalogue_uuid") && !result.containsKey(dsid)) {
+                log.debug("Dataset {} has UUID '{}'.", dsid, dat.getString("catalogue_uuid"));
+                result.put(dsid, dat.getString("catalogue_uuid"));
+            } else log.debug("Dataset {} has no UUID.", dsid);
+        }
+        return result;
+    }
+
+    @Override
     public URI getQueryEndpoint(URI dataset) {
         JSONObject typeMap = documentProvider.getView("catalogue", "datasets", dataset.toString());
         JSONArray rows = typeMap.getJSONArray("rows");

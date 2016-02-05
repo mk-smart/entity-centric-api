@@ -98,8 +98,10 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider {
             GlobalType gt = new GlobalTypeImpl(GlobalType.TOP_URI);
             log.debug("Falling back to TOP type spec <{}>", gt);
             JSONObject gtDoc = documentProvider.getDocument(gt.getId().toString());
-            program = gtDoc.getString("localise");
-            qtpl = gtDoc.getString("query_tpl");
+            if (gtDoc != null) {
+                program = gtDoc.getString("localise");
+                qtpl = gtDoc.getString("query_tpl");
+            }
         }
         if (program != null && qtpl != null) {
             Object deal = ScriptUtils.runJs(
@@ -219,11 +221,13 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider {
                 log.debug(" ... Queries before: {}", result.get(ds).size());
                 // datasets.add(ds);
                 if (value.has("fetch_query")) {
-                    String fetch = value.getString("fetch_query");
-                    log.debug(" ... query is \"{}\"", fetch);
-                    Query query = new SparqlTargetedQuery(Query.Type.SPARQL_SELECT, fetch, ds);
-                    result.get(ds).add(query);
-                    log.debug(" ... Queries after: {}", result.get(ds).size());
+                    String fetch = value.getString("fetch_query").trim();
+                    if (!fetch.isEmpty()) {
+                        log.debug(" ... query is \"{}\"", fetch);
+                        Query query = new SparqlTargetedQuery(Query.Type.SPARQL_SELECT, fetch, ds);
+                        result.get(ds).add(query);
+                        log.debug(" ... Queries after: {}", result.get(ds).size());
+                    }
                 }
             } else log.error("<== FAIL - no query endpoint specified for this dataset. Skipping.");
         }

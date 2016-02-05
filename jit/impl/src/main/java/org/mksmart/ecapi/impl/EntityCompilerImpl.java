@@ -105,33 +105,38 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
     }
 
     @Override
-    public Entity assembleEntity(GlobalURI localId, Set<String> datasets) {
-        return assembleEntity(localId, datasets, false);
+    public Entity assembleEntity(GlobalURI gid, Set<String> datasets) {
+        return assembleEntity(gid, datasets, false);
+    }
+    
+    @Override
+    public Catalogue getCatalogue() {
+        return this.catalogue;
     }
 
     @Override
-    public Entity assembleEntity(GlobalURI localId, Set<String> datasets, boolean debug) {
+    public Entity assembleEntity(GlobalURI gid, Set<String> datasets, boolean debug) {
         // At this stage, datasets could be null, which means "open data".
         Entity e = new EntityImpl(), ecached = new EntityImpl();
-        log.debug("Resolving global URI {}", localId);
-        if (localId instanceof CanonicalGlobalURI) log.trace(" ... entity type: {}",
-            ((CanonicalGlobalURI) localId).getEntityType());
-        if (localId instanceof ScopedGlobalURI) {
-            ScopedGlobalURI t = (ScopedGlobalURI) localId;
+        log.debug("Resolving global URI {}", gid);
+        if (gid instanceof CanonicalGlobalURI) log.trace(" ... entity type: {}",
+            ((CanonicalGlobalURI) gid).getEntityType());
+        if (gid instanceof ScopedGlobalURI) {
+            ScopedGlobalURI t = (ScopedGlobalURI) gid;
             log.trace(" ... identified BY: {}", t.getIdentifierRealm());
             log.trace(" ... identified USING: {}", t.getIdentifyingProperty());
         }
-        if (localId instanceof CanonicalGlobalURI) log.trace(" ... identifier: {}",
-            ((CanonicalGlobalURI) localId).getIdentifer());
+        if (gid instanceof CanonicalGlobalURI) log.trace(" ... identifier: {}",
+            ((CanonicalGlobalURI) gid).getIdentifer());
 
         Map<URI,List<Query>> queries = new HashMap<>();
         for (AssemblyProvider ap : providers) {
             log.debug("Requesting assembly from provider of type {}", ap.getClass());
             Map<URI,List<Query>> tqueries;
             if (ap instanceof DebuggableAssemblyProvider) tqueries = ((DebuggableAssemblyProvider) ap)
-                    .getQueryMap(localId, datasets, debug);
-            else tqueries = ap.getQueryMap(localId, datasets);
-            if (tqueries.isEmpty()) log.warn("No queries to be performed on URI <{}>.", localId);
+                    .getQueryMap(gid, datasets, debug);
+            else tqueries = ap.getQueryMap(gid, datasets);
+            if (tqueries.isEmpty()) log.warn("No queries to be performed on URI <{}>.", gid);
             for (Entry<URI,List<Query>> entry : tqueries.entrySet()) {
                 if (!queries.containsKey(entry.getKey())) queries.put(entry.getKey(), new ArrayList<Query>());
                 queries.get(entry.getKey()).addAll(entry.getValue());

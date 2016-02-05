@@ -38,4 +38,6 @@ public interface Catalogue {
      */
     public Set<URI> getSupportingDatasets(URI type);
 
+    public Map<URI,String> getUuids(URI... datasetIds);
+
 }

@@ -226,4 +226,9 @@ public class RDFCatalogue extends HashMap<URI,Set<URI>> implements Catalogue, De
         return result;
     }
 
+    @Override
+    public Map<URI,String> getUuids(URI... datasetIds) {
+        throw new NotImplementedException("NIY - bear with me.");
+    }
+
 }

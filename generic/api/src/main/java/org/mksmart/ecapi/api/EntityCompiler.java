@@ -64,4 +64,6 @@ public interface EntityCompiler extends SupportRetriever {
      */
     public Set<URI> getInstances(GlobalType type);
 
+    Catalogue getCatalogue();
+
 }

@@ -1,5 +1,10 @@
 package org.mksmart.ecapi.web.resources;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.ws.rs.DefaultValue;
@@ -17,6 +22,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.json.JSONObject;
+import org.mksmart.ecapi.api.Catalogue;
 import org.mksmart.ecapi.api.DebuggableEntityCompiler;
 import org.mksmart.ecapi.api.Entity;
 import org.mksmart.ecapi.api.id.GlobalURI;
@@ -43,7 +49,7 @@ public class EntityResourceWithProvenance extends EntityResource {
         Set<String> dss = handleCredentials(headers, debug);
         if (dss != null) for (String ds : dss)
             log.info("Dataset {}", ds);
-        id = tyype + '/' + id;
+        id = tyype + '/' + id; // not sure about keeping
         DebuggableEntityCompiler compiler = (DebuggableEntityCompiler) servletContext
                 .getAttribute(DebuggableEntityCompiler.class.getName());
         // Parse global URI first, also a security measure for unwanted accesses.
@@ -54,10 +60,26 @@ public class EntityResourceWithProvenance extends EntityResource {
             if (e == null) {
                 rb = Response.status(Status.NOT_FOUND).entity("{ found: false }");
             } else {
+                Map<URI,Entity> supportData = new HashMap<>();
+                // Add dataset info
+                Catalogue cat = compiler.getCatalogue();
+                if (cat != null) {
+                    List<URI> dids = new ArrayList<>();
+                    for (String s : e.getProvenanceMap().keySet())
+                        dids.add(URI.create(s));
+                    Map<URI,String> uuids = cat.getUuids(dids.toArray(new URI[0]));
+                    for (URI did : dids)
+                        if (uuids.containsKey(did)) {
+                            GlobalURI gdsid = preprocessGlobalId("dataset" + '/' + uuids.get(did));
+                            supportData.put(did, compiler.assembleEntity(gdsid, dss));
+                        }
+                }
+
                 @SuppressWarnings("rawtypes")
                 UriRewriter rewriter = global ? new UriRewriter(
                         (IdGenerator) servletContext.getAttribute(IdGenerator.class.getName())) : null;
-                JSONObject serial = JsonProvenanceDataSerializer.serialize(e, gu, rewriter);
+                JSONObject serial = new JsonProvenanceDataSerializer(supportData).serialize(e, gu, rewriter,
+                    selectNamespace(uriInfo, headers, false));
                 rb = Response.ok(serial);
             }
         }
