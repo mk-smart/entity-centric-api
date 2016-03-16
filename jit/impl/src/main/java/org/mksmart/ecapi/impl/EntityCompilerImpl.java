@@ -108,11 +108,6 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
     public Entity assembleEntity(GlobalURI gid, Set<String> datasets) {
         return assembleEntity(gid, datasets, false);
     }
-    
-    @Override
-    public Catalogue getCatalogue() {
-        return this.catalogue;
-    }
 
     @Override
     public Entity assembleEntity(GlobalURI gid, Set<String> datasets, boolean debug) {
@@ -130,9 +125,9 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
             ((CanonicalGlobalURI) gid).getIdentifer());
 
         Map<URI,List<Query>> queries = new HashMap<>();
-        for (AssemblyProvider ap : providers) {
+        for (AssemblyProvider<?> ap : providers) {
             log.debug("Requesting assembly from provider of type {}", ap.getClass());
-            Map<URI,List<Query>> tqueries;
+            Map<URI,List<Query>> tqueries;            
             if (ap instanceof DebuggableAssemblyProvider) tqueries = ((DebuggableAssemblyProvider) ap)
                     .getQueryMap(gid, datasets, debug);
             else tqueries = ap.getQueryMap(gid, datasets);
@@ -254,7 +249,7 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
                 representation.addValue(property, val);
                 // Check if this is a unifier, for what properties and with what
                 // transform
-                if (providers != null) for (AssemblyProvider provider : providers)
+                if (providers != null) for (AssemblyProvider<?> provider : providers)
                     try {
                         for (URI tt : provider.getCandidateTypes(property)) {
                             if (!typeSupport.containsKey(tt)) typeSupport.put(tt, new HashSet<URI>());
@@ -406,6 +401,11 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
         }
         log.info(" ... total compilation time: {} ms", System.currentTimeMillis() - before);
         return representation;
+    }
+
+    @Override
+    public Catalogue getCatalogue() {
+        return this.catalogue;
     }
 
     @Override

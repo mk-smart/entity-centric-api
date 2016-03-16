@@ -180,7 +180,7 @@ public class EntityResource extends BaseResource {
         ResponseBuilder rb;
         JSONObject sol = new JSONObject();
         // TODO refer to the compiler instead
-        AssemblyProvider ep = (AssemblyProvider) servletContext
+        AssemblyProvider<?> ep = (AssemblyProvider) servletContext
                 .getAttribute(AssemblyProvider.class.getName());
         JSONArray types = new JSONArray();
         for (URI ut : ep.getSupportedTypes()) {
@@ -208,7 +208,7 @@ public class EntityResource extends BaseResource {
                                 @DefaultValue("false") @QueryParam("debug") boolean debug,
                                 @Context HttpHeaders headers,
                                 @Context UriInfo uriInfo) {
-        AssemblyProvider ep = (AssemblyProvider) servletContext
+        AssemblyProvider<?> ep = (AssemblyProvider) servletContext
                 .getAttribute(AssemblyProvider.class.getName());
         DebuggableEntityCompiler compiler = (DebuggableEntityCompiler) servletContext
                 .getAttribute(DebuggableEntityCompiler.class.getName());

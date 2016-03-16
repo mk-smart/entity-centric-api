@@ -23,6 +23,10 @@ public interface DocumentProvider<D> {
      */
     public D getDocument(String id);
 
+    public D getDocuments(String... keys);
+
+    public D getReducedView(String designDocId, String viewId, boolean group, String... keys);
+
     /**
      * Returns a resource of any type (including views) given its full URL. It is a low-level method that can
      * be called in lieu of {@link DocumentProvider#getDocument(String)} or

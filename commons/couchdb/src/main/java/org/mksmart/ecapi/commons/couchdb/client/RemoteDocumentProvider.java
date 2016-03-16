@@ -70,7 +70,6 @@ public class RemoteDocumentProvider implements DocumentProvider<JSONObject> {
     @Override
     public JSONObject getDocument(String documentId) {
         log.debug("Requested CouchDB document {}", documentId);
-
         String didEnc;
         try {
             didEnc = new URLCodec().encode(documentId);
@@ -81,6 +80,40 @@ public class RemoteDocumentProvider implements DocumentProvider<JSONObject> {
         }
         String u = this.serviceUrl.toString() + '/' + this.dbName + '/' + didEnc;
         return getResource(u);
+    }
+
+    @Override
+    public JSONObject getDocuments(String... keys) {
+        log.debug("Requested all CouchDB documents");
+        for (String k : keys)
+            log.debug(" ... with key \"{}\"", k);
+        String u = this.serviceUrl.toString() + '/' + this.dbName + '/' + "_all_docs?include_docs=true";
+        return getResource(u, keys);
+    }
+
+    @Override
+    public JSONObject getReducedView(String designDocId, String viewId, boolean group, String... keys) {
+        log.debug("Requested CouchDB view {}:{}", designDocId, viewId);
+        log.debug(" ... reduce grouping = {}", group);
+        for (String k : keys)
+            log.debug(" ... with key \"{}\"", k);
+        try {
+            designDocId = new URLCodec().encode(designDocId);
+        } catch (EncoderException e) {
+            log.error("Retrieval of view '{}/view/{}' FAILED. ", designDocId, viewId);
+            log.error(" ... reason: could not URLencode design document ID '{}'.", designDocId);
+            throw new RuntimeException(e);
+        }
+        try {
+            viewId = new URLCodec().encode(viewId);
+        } catch (EncoderException e) {
+            log.error("Retrieval of view '{}/view/{}' FAILED. ", designDocId, viewId);
+            log.error(" ... reason: could not URLencode view name '{}'.", viewId);
+            throw new RuntimeException(e);
+        }
+        String u = this.serviceUrl.toString() + '/' + this.dbName + '/' + "_design" + '/' + designDocId + '/'
+                   + "_view" + '/' + viewId + '?' + "group=" + group;
+        return getResource(u, keys);
     }
 
     @Override

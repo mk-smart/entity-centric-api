@@ -14,9 +14,11 @@ import org.mksmart.ecapi.api.query.Query;
  * {@link EntityCompiler}, in turn supported by entity providers.
  * 
  * @author alessandro <alexdma@apache.org>
- * 
+ *
+ * @param <F>
+ *            the type of microcompiler functions
  */
-public interface AssemblyProvider extends SupportRetriever {
+public interface AssemblyProvider<F> extends SupportRetriever {
 
     /**
      * Returns the possible types of the entity with the given global identifier.
@@ -40,6 +42,10 @@ public interface AssemblyProvider extends SupportRetriever {
     @Deprecated
     public Set<URI> getCandidateTypes(URI property);
 
+    public F getMicrocompiler(String name, GlobalType type);
+
+    public F getMicrocompiler(String name, GlobalType type, URI dataSource);
+
     /**
      * Gets a raw representation of the compiler code used for obtaining data on an entity with a certain
      * type. This is not executed by the provider itself, but can be run by an {@link EntityCompiler}.
@@ -49,6 +55,16 @@ public interface AssemblyProvider extends SupportRetriever {
      * @return the microcompiler code for this type.
      */
     public String getMicrocompiler(URI type);
+
+    /**
+     * For a given type, returns all the microcompiler functions that should be used to JIT query execution on
+     * a data source.
+     * 
+     * @param type
+     * @param dataSource
+     * @return
+     */
+    public Map<String,F> getMicrocompilers(GlobalType type, URI dataSource);
 
     /**
      * Gets an associative object that maps service endpoints to the queries to be performed on them for

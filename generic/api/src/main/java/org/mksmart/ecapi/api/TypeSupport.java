@@ -10,6 +10,7 @@ import java.util.Set;
 import org.mksmart.ecapi.api.id.GlobalURI;
 
 /**
+ * A specification of data type.
  * 
  * @author alessandro <alexdma@apache.org>
  * 

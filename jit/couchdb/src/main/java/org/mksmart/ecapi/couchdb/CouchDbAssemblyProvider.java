@@ -7,9 +7,11 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
@@ -47,7 +49,7 @@ import org.slf4j.LoggerFactory;
  * @author alessandro <alexdma@apache.org>
  * 
  */
-public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider {
+public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<String> {
 
     public static final String DEFAULT_DESIGN_DOC_ID = "_design/compile";
 
@@ -302,6 +304,7 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider {
             Vector<Query> queries = new Vector<Query>();
             // list datasets that have the type (new view typedataset)
             String entType = "type/global:id/" + guri.getEntityType();
+
             log.debug("Scanning dataset support for type '{}'", entType);
             JSONObject jds = documentProvider.getView("compile", "typedataset", entType);
             JSONArray rows = jds.getJSONArray("rows");
@@ -323,6 +326,13 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider {
                     log.debug(" ... NOT allowed with supplied credentials! Skipping...");
                     continue;
                 }
+
+                GlobalType ty = new GlobalTypeImpl(ScopedGlobalURI.parse(entType));
+                Map<String,String> jitFunctions = getMicrocompilers(ty, URI.create(row.getString("id")));
+                log.trace("Microcompilers for {} follow:", URI.create(row.getString("id")));
+                for (Entry<String,String> entry : jitFunctions.entrySet())
+                    log.trace("{} : {}", entry.getKey(), entry.getValue());
+
                 String sep = value.getString("sep");
                 String luri = null;
                 if (sep == null) {
@@ -331,9 +341,12 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider {
                 }
                 log.debug(" ... Query endpoint is <{}>", sep);
 
-                // Look for the localise function in the dataset first, then in the type spec
-                String localise = value.has("localise") ? value.getString("localise")
-                        : localiseFromType(entType);
+                // Look for the localise function in the JIT plan first, then in the dataset document, finally
+                // in the type spec
+                String localise;
+                if (jitFunctions.containsKey("localise")) localise = jitFunctions.get("localise");
+                else if (value.has("localise")) localise = value.getString("localise");
+                else localise = localiseFromType(entType);
                 if (localise == null) {
                     log.error("<== FAIL - no localise function specified for this dataset. Skipping.");
                     continue;
@@ -356,8 +369,19 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider {
                     continue;
                 }
                 Query query;
+                if (jitFunctions.containsKey("query_text")) {
+                    String query_text = jitFunctions.get("query_text");
+                    // FIXME copied from below
+                    query_text = query_text.replaceAll("\\[LURI\\]", luri);
+                    log.debug(" ... query text: \"{}\"", query_text);
+                    if (value.has("dataset")) query = new SparqlTargetedQuery(Query.Type.SPARQL_SELECT,
+                            query_text, URI.create(value.getString("dataset")));
+                    else query = new SparqlQuery(Query.Type.SPARQL_SELECT, query_text);
+              
+                }
+                
                 // the dataset spec could have a standard query template
-                if (value.has("query_tpl")) {
+                else if (value.has("query_tpl")) {
                     log.debug(" ... query template: \"{}\"", value.getString("query_tpl"));
                     URI tgt = URI.create(luri);
                     query = QueryParser.parse(value.getString("query_tpl"), tgt);
@@ -470,14 +494,17 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider {
     }
 
     private String localiseFromType(String type) {
-        log.debug("Selecting localisation function for type '{}'", type);
+        log.debug("Selecting localisation function from type definition '{}'", type);
         JSONObject typev = documentProvider.getView("compile", "typefunctions", type);
         JSONArray rows = typev.getJSONArray("rows");
         log.debug(" ... Obtained {} types", rows.length());
         if (rows.length() == 1) {
             JSONObject val = rows.getJSONObject(0).getJSONObject("value");
-            if (val.has("localise")) return val.getString("localise");
-            else if (val.has("super")) return localiseFromType(val.getString("super"));
+            if (val.has("localise")) {
+                String func = val.getString("localise");
+                log.debug("localise function follows:\r\n{}", func);
+                return func;
+            } else if (val.has("super")) return localiseFromType(val.getString("super"));
         }
         log.warn("Got more than one type functions, will skip type '{}'", type);
         return null;
@@ -518,6 +545,58 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider {
             } else if (val.has("super")) return queryFromType(val.getString("super"), luri, dataset);
         } else log.warn("Got more than one type functions, will skip type '{}'", type);
         return null;
+    }
+
+    @Override
+    public String getMicrocompiler(String name, GlobalType type) {
+        throw new NotImplementedException("NIY");
+    }
+
+    @Override
+    public String getMicrocompiler(String name, GlobalType type, URI dataSource) {
+        throw new NotImplementedException("NIY");
+    }
+
+    @Override
+    public Map<String,String> getMicrocompilers(GlobalType type, URI dataSource) {
+        log.debug("Getting microcompilers for type <{}> from data source <{}>", type, dataSource);
+        Map<String,String> res = new HashMap<>();
+        Map<String,Set<String>> funcMap = new HashMap<>();
+        JSONObject jmap = documentProvider.getReducedView("compile", "jit", true, type.getId().toString());
+        JSONArray rows = jmap.getJSONArray("rows");
+        for (int i = 0; i < rows.length(); i++) {
+            JSONObject row = rows.getJSONObject(i).getJSONObject("value");
+            if (row.has(dataSource.toString())) {
+                JSONObject dsc = row.getJSONObject(dataSource.toString());
+                for (Iterator<?> it = dsc.keys(); it.hasNext();) {
+                    String funcName = (String) it.next();
+                    JSONObject conf = dsc.getJSONObject(funcName);
+                    if (conf.has("config")) {
+                        String confPointer = conf.getString("config");
+                        if (!funcMap.containsKey(confPointer)) funcMap
+                                .put(confPointer, new HashSet<String>());
+                        funcMap.get(confPointer).add(funcName);
+                    }
+                }
+            }
+        }
+        JSONObject jFuncs = documentProvider.getDocuments(funcMap.keySet().toArray(new String[0]));
+        rows = jFuncs.getJSONArray("rows");
+        for (int i = 0; i < rows.length(); i++) {
+            String ds = rows.getJSONObject(i).getString("id");
+            JSONObject jTyps = rows.getJSONObject(i).getJSONObject("doc").getJSONObject("mks:types");
+            if (jTyps.has(type.getId().toString())) {
+                JSONObject jTyp = jTyps.getJSONObject(type.getId().toString());
+                for (String funcName : funcMap.get(ds)) {
+                    if (jTyp.has(funcName) && !res.containsKey(funcName)) {
+                        log.debug("Getting microcompiler \"{}\" from configuration <{}>", funcName, ds);
+                        res.put(funcName, jTyp.getString(funcName));
+                    }
+
+                }
+            }
+        }
+        return res;
     }
 
 }
