@@ -361,7 +361,7 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
                                   guri instanceof ScopedGlobalURI ? ((ScopedGlobalURI) guri)
                                           .getIdentifyingProperty() : null, guri.getIdentifer()},
                     String.class);
-                log.info("<== DONE - Local URI is {}", deal);
+                log.debug("<== DONE - Conjunctive query was recompiled to '{}'", deal);
                 luri = (String) deal;
                 if (luri == null || luri.isEmpty()) {
                     log.debug("No local URI could be obtained from dataset <{}>. Skipping",

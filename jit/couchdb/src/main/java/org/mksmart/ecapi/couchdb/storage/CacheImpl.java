@@ -1,6 +1,7 @@
 package org.mksmart.ecapi.couchdb.storage;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,6 +39,10 @@ public class CacheImpl implements Cache {
 
     @Override
     public Set<TargetedQuery> getCacheHits(Map<URI,List<Query>> queryPlan) {
+        if (queryPlan.isEmpty()) {
+            log.debug("Query plan is empty - Skipping cache hit check.");
+            return Collections.emptySet();
+        }
         long before = System.currentTimeMillis();
         Set<TargetedQuery> output = new HashSet<>();
         Set<String> targets = new HashSet<>();
@@ -88,8 +93,9 @@ public class CacheImpl implements Cache {
             JSONObject row = rows.getJSONObject(i);
             String k = row.getString("key"); // The encoded query
             if (!keys.contains(k)) {
-                log.warn("Cache hit filtering returned an encoded TargetedQuery that was not requested."
-                         + " This might be due to having traced up to a supertype.");
+                log.warn("Cache hit filtering returned an encoded TargetedQuery that was not requested. Discarding.");
+                log.warn("This might be due to having traced up to a supertype.");
+                log.warn(" ... (got {} cache table entries; {} were requested)", rows.length(), keys.size());
                 continue;
             }
 
@@ -97,7 +103,7 @@ public class CacheImpl implements Cache {
             // If true, the data must always be retrieved from the cache, if present.
             boolean forceCacheHit = false;
             String ds = encodings.get(k).getTarget().toString();
-            log.debug("Is there a lifetime for <{}>? {}", ds, lifetimes.containsKey(ds));
+            log.debug("Is there a set lifetime for <{}>? {}", ds, lifetimes.containsKey(ds));
             if (lifetimes.containsKey(ds) && lifetimes.get(ds) != null) lifetime = lifetimes.get(ds);
             else forceCacheHit = true;
 
@@ -106,10 +112,9 @@ public class CacheImpl implements Cache {
             log.trace(" ... caching time was {} - {}", cached, new Date(cached));
             long age = before - cached;
             log.debug(" ... age is {} - lifetime is {}", age, lifetime);
-            log.debug(" ... valid cache? {}", age < lifetime);
-            log.debug(" ... forced retrieve? {}", forceCacheHit);
+            log.debug(" ... valid cache? {} - forced retrieve? {}", age < lifetime, forceCacheHit);
             if (forceCacheHit || age < lifetime) {
-                log.debug("Registering as cache hit...");
+                log.debug("|<== Registering as cache hit.");
                 output.add(encodings.get(k));
             }
         }

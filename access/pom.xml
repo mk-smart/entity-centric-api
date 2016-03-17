@@ -21,7 +21,7 @@
 	</build>
 
 	<dependencies>
-
+	
 		<!-- project tax -->
 		<dependency>
 			<groupId>org.mksmart</groupId>
@@ -34,6 +34,13 @@
 			<version>${datahub-version}</version>
 		</dependency>
 
+		<!-- commons tax -->
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.3.6</version> <!-- compatible with commons-codec 1.6 -->
+		</dependency>
+		
 		<!-- client tax -->
 		<dependency>
 			<groupId>mysql</groupId>

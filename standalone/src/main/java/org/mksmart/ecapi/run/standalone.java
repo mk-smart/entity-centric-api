@@ -1,8 +1,11 @@
 package org.mksmart.ecapi.run;
 
+import static org.mksmart.ecapi.access.Config.KEYMGMT_ISAPI_HOST;
+
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Properties;
 
 import javax.servlet.ServletContext;
 
@@ -21,6 +24,7 @@ import org.eclipse.jetty.webapp.WebAppContext;
 import org.json.JSONObject;
 import org.mksmart.ecapi.access.ApiKeyDriver;
 import org.mksmart.ecapi.access.auth.VisibilityChecker;
+import org.mksmart.ecapi.access.isapi.IsapiKeyDriver;
 import org.mksmart.ecapi.access.mysql.MySqlKeyDriver;
 import org.mksmart.ecapi.api.AssemblyProvider;
 import org.mksmart.ecapi.api.Catalogue;
@@ -186,7 +190,11 @@ public class standalone {
         }
         // Instantiate access components
         sctx.setAttribute(VisibilityChecker.class.getName(), new VisibilityChecker(ctlg));
-        sctx.setAttribute(ApiKeyDriver.class.getName(), new MySqlKeyDriver(couchConfig.asProperties()));
+        // Priority to ISAPI key driver
+        Properties pro = couchConfig.asProperties();
+        ApiKeyDriver driver = pro.containsKey(KEYMGMT_ISAPI_HOST) ? new IsapiKeyDriver(pro)
+                : new MySqlKeyDriver(pro);
+        sctx.setAttribute(ApiKeyDriver.class.getName(), driver);
     }
 
     @SuppressWarnings("rawtypes")
