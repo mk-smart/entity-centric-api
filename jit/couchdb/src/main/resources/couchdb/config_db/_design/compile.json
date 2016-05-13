@@ -2,6 +2,11 @@
    "_id": "_design/compile",
    "language": "javascript",
    "views": {
+       "jit": {
+           "description": "For each type and data source configuration, computes the data sources which should be used for each microcompiler function needed by the JIT engine, based on inheritance machanism",
+           "map": "function(s){switch(s.type){case\"provider-spec\":for(var e in s[\"mks:types\"])emit(e,{source:s._id,specs:s[\"mks:types\"][e]})}};",
+           "reduce": "function(e,r,s){for(var n={},c={},o=0;o<e.length;o++)c[e[o][1]]=o;if(s)return n;for(var t=function(e,s){var n=\"experimental:inherit\",o=\"experimental:datasource\";for(var a in e.specs)e.specs.hasOwnProperty(a)&&a!=n&&(s[a]||(s[a]={config:e.source}));e.specs.hasOwnProperty(n)&&e.specs[n][o]&&t(r[c[e.specs[n][o]]],s)},o=0;o<r.length;o++)n[r[o].source]={},t(r[o],n[r[o].source]);return n};"
+       },
        "typemaps": {
            "map": "function(doc){ switch(doc.type){ case 'provider-spec': for(var ty in doc['mks:types']) emit(ty, { dataset: doc._id, debug:doc.debug, globalise: doc['mks:types'][ty].globalise, localise: doc['mks:types'][ty].localise }); break; case 'global-type-spec': emit(doc._id, { super:doc['mks:super'], globalise: doc.globalise, localise: doc.localise }); break; } }"
        },
