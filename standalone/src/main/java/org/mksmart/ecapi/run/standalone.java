@@ -25,7 +25,7 @@ import org.json.JSONObject;
 import org.mksmart.ecapi.access.ApiKeyDriver;
 import org.mksmart.ecapi.access.auth.VisibilityChecker;
 import org.mksmart.ecapi.access.isapi.IsapiKeyDriver;
-import org.mksmart.ecapi.access.mysql.MySqlKeyDriver;
+import org.mksmart.ecapi.access.mysql.SsimpleAuthKeyDriver;
 import org.mksmart.ecapi.api.AssemblyProvider;
 import org.mksmart.ecapi.api.Catalogue;
 import org.mksmart.ecapi.api.DebuggableEntityCompiler;
@@ -44,6 +44,7 @@ import org.mksmart.ecapi.couchdb.storage.CacheImpl;
 import org.mksmart.ecapi.couchdb.storage.FragmentPerQueryStore;
 import org.mksmart.ecapi.impl.EntityCompilerImpl;
 import org.mksmart.ecapi.impl.storage.NonStoringEntityStore;
+import org.mksmart.ecapi.web.util.SPARQLWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,7 +176,7 @@ public class standalone {
             else log.warn("Entity store implementation '{}' does not support lookahead of cache hits.", stor
                     .getClass().getName());
             if (cache == null) log.warn("Could not initialise cache. All queries will be performed fresh.");
-            sctx.setAttribute(DebuggableEntityCompiler.class.getName(), new EntityCompilerImpl(ep, ctlg,
+           sctx.setAttribute(DebuggableEntityCompiler.class.getName(), new EntityCompilerImpl(ep, ctlg,
                     cache, stor));
         } catch (IllegalStateException | ClientAuthenticationException ex) {
             log.error("Illegal state caught for compiler database.");
@@ -190,11 +191,12 @@ public class standalone {
         }
         // Instantiate access components
         sctx.setAttribute(VisibilityChecker.class.getName(), new VisibilityChecker(ctlg));
-        // Priority to ISAPI key driver
+        // Priority to ISAPI key drivernti
         Properties pro = couchConfig.asProperties();
         ApiKeyDriver driver = pro.containsKey(KEYMGMT_ISAPI_HOST) ? new IsapiKeyDriver(pro)
-                : new MySqlKeyDriver(pro);
+                : new SsimpleAuthKeyDriver(pro);	
         sctx.setAttribute(ApiKeyDriver.class.getName(), driver);
+	sctx.setAttribute(SPARQLWriter.class.getName(), new SPARQLWriter(pro.getProperty("org.mksmart.web.util.sparql.writer")));
     }
 
     @SuppressWarnings("rawtypes")

@@ -147,4 +147,9 @@ public class MySqlKeyDriver implements ApiKeyDriver {
         return result;
     }
 
+    @Override
+    public boolean hasRight(String key, String resourceID, int right){
+	throw new UnsupportedOperationException("cannot check the rights of a key");
+    }
+
 }

@@ -349,6 +349,41 @@ public class EntityResource extends BaseResource {
         else return keyDrv.getDataSources(apiKeys.toArray(new String[0]));
     }
 
+    /** MDA **/
+    // TODO: Move to a new DatasetResource
+    //       Add Dataset Resource to CompilerApplication
+    //       Add a new endpoint grant/{uuid}
+    //       Check with A why DSS is ignored when using key above
+    @POST
+    @Path("{uuid}")
+    @Produces(value = {MediaType.APPLICATION_JSON})
+    public Response write(@PathParam("uuid") String uuid,
+			  @QueryParam("key") String key,
+			  @FormParam("data") String data, 
+			  @Context HttpHeaders headers,
+			  @Context HttpServletRequest request) {
+	ResponseBuilder rb = null;
+	if (key == null || !writeAuthorised(key, uuid, headers, request)){
+	    rb = Response.status(Response.Status.FORBIDDEN);
+	    return rb.build();
+	}
+	SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
+	int code = writer.write(data, "urn:dataset/"+uuid+"/graph");
+	if (code != 200) { 
+	    rb = Response.status(code); 
+	}
+	else {
+	    JSONObject o = new JSONObject().put("status:", "written to "+uuid+"\n");
+	    rb = Response.ok((JSONObject) o);
+	}
+	return rb.build();
+    }
+
+    protected boolean writeAuthorised(String key, String uuid, HttpHeaders headers, HttpServletRequest request){
+        ApiKeyDriver keyDrv = (ApiKeyDriver) servletContext.getAttribute(ApiKeyDriver.class.getName());	
+	return keyDrv.hasRight(key, uuid, ApiKeyDriver.WRITE_RIGHT);
+    }
+
     protected void init(UriInfo uriInfo, HttpHeaders headers) {
         log.trace("Request URI was {}", uriInfo.getRequestUri());
         log.trace("Base URI was {}", uriInfo.getBaseUri());

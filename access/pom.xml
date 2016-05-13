@@ -71,6 +71,12 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<dependency>
+		  <groupId>org.mksmart</groupId>
+		  <artifactId>ssimple-auth</artifactId>
+		  <version>0.2</version>
+		</dependency>
+
 	</dependencies>
 
 </project>

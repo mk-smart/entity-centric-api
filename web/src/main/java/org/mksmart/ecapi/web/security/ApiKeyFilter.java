@@ -115,7 +115,7 @@ public class ApiKeyFilter implements Filter {
         // log.debug(" ... {}", apikey);
         // log.debug("(not verified yet)");
         ApiKeyDriver keyDrv = (ApiKeyDriver) servletContext.getAttribute(ApiKeyDriver.class.getName());
-        if (!keyDrv.exists(apiKeys.toArray(new String[0]))) return false;
+        // if (!keyDrv.exists(apiKeys.toArray(new String[0]))) return false;
         // servletContext.setAttribute("org.mksmart.ecapi.apikey", apiKeys);
         return true;
     }

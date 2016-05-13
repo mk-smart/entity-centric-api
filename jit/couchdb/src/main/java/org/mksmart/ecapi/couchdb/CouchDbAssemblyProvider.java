@@ -128,23 +128,26 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
     }
 
     private Set<String> filterDatasets(JSONObject view, Set<String> datasetNames) {
-        boolean opendata = datasetNames == null;
+        boolean opendata = ( datasetNames == null );
+	log.info("Dataset name = "+datasetNames);
         Set<String> filtered = new HashSet<>(), checkUs = new HashSet<>();
         JSONArray rows = view.getJSONArray("rows");
         for (int i = 0; i < rows.length(); i++) {
             JSONObject row = rows.getJSONObject(i);
             checkUs.add(row.getString("id"));
         }
-        if (opendata) try {
-            filtered = VisibilityChecker.getInstance().filter(checkUs);
-        } catch (UnavailablePolicyTableException e) {
-            log.error("Denying all data access due to unavailable policy table.");
-            throw new RuntimeException(e);
-        }
-        else {
+	if (opendata) try {
+		log.info("Hey - open data!!!");
+		filtered = VisibilityChecker.getInstance().filter(checkUs);
+	    } catch (UnavailablePolicyTableException e) {
+		log.error("Denying all data access due to unavailable policy table.");
+		throw new RuntimeException(e);
+	    }
+	else {
             filtered.addAll(datasetNames);
             filtered.retainAll(checkUs);
-        }
+	}
+	log.info("Filtered = "+filtered);
         return filtered;
     }
 
@@ -323,7 +326,7 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
                     continue;
                 }
                 if (allowed != null && !allowed.contains(row.getString("id"))) {
-                    log.debug(" ... NOT allowed with supplied credentials! Skipping...");
+                    log.info(" ... NOT allowed with supplied credentials! Skipping...");
                     continue;
                 }
 
@@ -415,7 +418,7 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
             }
         }
         // If no queries were generated, do general fallback
-        if (result.isEmpty()) fallbackPostProcess(guri, result);
+	// if (result.isEmpty()) fallbackPostProcess(guri, result);
 
         return result;
     }

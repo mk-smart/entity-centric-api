@@ -85,6 +85,7 @@
 			<version>20140107</version>
 			<!-- <scope>test</scope> -->
 		</dependency>
+
 		<!-- note: typically only a ".0" patch version exists for jackson-annotations -->
 <!-- 
 		<dependency>
