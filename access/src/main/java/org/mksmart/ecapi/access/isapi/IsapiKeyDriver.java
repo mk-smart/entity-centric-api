@@ -22,6 +22,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.wink.client.ClientAuthenticationException;
@@ -189,6 +190,21 @@ public class IsapiKeyDriver implements ApiKeyDriver {
             }
         }
         return doc;
+    }
+
+    @Override
+    public boolean hasRight(String key, String resourceID, int right) {
+        throw new UnsupportedOperationException("cannot check the rights of a key");
+    }
+
+    @Override
+    public Set<String> getDataSources() {
+        throw new NotImplementedException("NIY");
+    }
+
+    @Override
+    public boolean grant(String key, String ukey, String resourceID, int right) {
+        throw new NotImplementedException("NIY");
     }
 
 }

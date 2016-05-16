@@ -43,26 +43,32 @@ public class RemoteDocumentProvider implements DocumentProvider<JSONObject> {
 
     private Logger log = LoggerFactory.getLogger(getClass());
 
+    public RemoteDocumentProvider(URL serviceUrl, String dbName) {
+        this(serviceUrl, dbName, null);
+    }
+
     public RemoteDocumentProvider(URL serviceUrl, String dbName, Credentials credentials) {
         this.serviceUrl = serviceUrl;
         this.dbName = dbName;
         ClientConfig config = new ClientConfig();
-        BasicAuthSecurityHandler auth = new BasicAuthSecurityHandler();
-        // Only set credentials if there is a username, no spaces around
-        if (credentials.getUserPrincipal() != null) {
-            String un = new String(credentials.getUserPrincipal().getName()).trim();
-            if (!un.isEmpty()) {
-                auth.setUserName(un);
-                if (credentials.getPassword() != null) {
-                    String pw = new String(credentials.getPassword()).trim();
-                    if (!pw.isEmpty()) {
-                        auth.setPassword(pw);
+        if (credentials != null) {
+            BasicAuthSecurityHandler auth = new BasicAuthSecurityHandler();
+            // Only set credentials if there is a username, no spaces around
+            if (credentials.getUserPrincipal() != null) {
+                String un = new String(credentials.getUserPrincipal().getName()).trim();
+                if (!un.isEmpty()) {
+                    auth.setUserName(un);
+                    if (credentials.getPassword() != null) {
+                        String pw = new String(credentials.getPassword()).trim();
+                        if (!pw.isEmpty()) {
+                            auth.setPassword(pw);
+                        }
                     }
-                }
 
+                }
             }
+            config.handlers(auth);
         }
-        config.handlers(auth);
         client = new RestClient(config);
         if (!healthCheck()) throw new IllegalStateException("Compiler database health check failed.");
     }

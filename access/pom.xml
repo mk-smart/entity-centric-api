@@ -17,6 +17,19 @@
 		<relativePath>..</relativePath>
 	</parent>
 
+  <repositories>
+     <repository>
+       <id>reasoners-hermit-embedded</id>
+       <url>file://localhost/${project.basedir}/src/main/resources/maven/repo</url>
+       <releases>
+         <updatePolicy>always</updatePolicy>
+       </releases>
+       <snapshots>
+         <updatePolicy>always</updatePolicy>
+       </snapshots>
+     </repository>
+  </repositories>
+
 	<build>
 	</build>
 
