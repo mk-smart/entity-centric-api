@@ -87,7 +87,7 @@
 		<dependency>
 		  <groupId>org.mksmart</groupId>
 		  <artifactId>ssimple-auth</artifactId>
-		  <version>0.2</version>
+		  <version>0.2.1</version>
 		</dependency>
 
 	</dependencies>
