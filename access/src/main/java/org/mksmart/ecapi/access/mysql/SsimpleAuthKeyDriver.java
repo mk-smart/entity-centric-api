@@ -1,5 +1,6 @@
 package org.mksmart.ecapi.access.mysql;
 
+import static org.mksmart.ecapi.access.Config.KEYMGMT_KEY_OPENDATA;
 import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_DB;
 import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_HOST;
 import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_PASSWORD;
@@ -20,19 +21,20 @@ public class SsimpleAuthKeyDriver implements ApiKeyDriver {
 
     protected String host, dbName, user, pw, prefix;
     protected KeyAuth keyauth = null;
-    protected Logger log = LoggerFactory.getLogger(getClass());
     protected String opendatakey = null;
+
+    private Logger log = LoggerFactory.getLogger(getClass());
 
     public SsimpleAuthKeyDriver(Properties config) {
         this.host = config.getProperty(KEYMGMT_MYSQL_HOST);
         this.dbName = config.getProperty(KEYMGMT_MYSQL_DB);
         this.user = config.getProperty(KEYMGMT_MYSQL_USER);
         this.pw = config.getProperty(KEYMGMT_MYSQL_PASSWORD);
-        this.opendatakey = config.getProperty("org.mksmart.ecapi.access.opendatakey");
+        this.opendatakey = config.getProperty(KEYMGMT_KEY_OPENDATA);
         // this.prefix = config.getProperty(KEYMGMT_DATASET_PREFIX);
         // TODO support KEYMGMT_AUTHSVR_USEPREFIX
         try {
-            log.info(this.host + " " + this.dbName + " " + this.user + " " + this.pw);
+            log.trace(this.host + " " + this.dbName + " " + this.user + " " + this.pw);
             this.keyauth = new KeyAuth(this.host, 3306, this.dbName, this.user, this.pw);
         } catch (Exception e) {
             e.printStackTrace();

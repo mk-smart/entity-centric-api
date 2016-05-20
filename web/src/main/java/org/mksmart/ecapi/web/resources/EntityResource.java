@@ -12,11 +12,9 @@ import java.util.StringTokenizer;
 import javax.servlet.ServletContext;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
@@ -33,6 +31,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mksmart.ecapi.access.ApiKeyDriver;
+import org.mksmart.ecapi.access.NotCheckingRightsException;
+import org.mksmart.ecapi.access.PermissiveKeyDriver;
 import org.mksmart.ecapi.api.AssemblyProvider;
 import org.mksmart.ecapi.api.DebuggableEntityCompiler;
 import org.mksmart.ecapi.api.Entity;
@@ -45,11 +45,8 @@ import org.mksmart.ecapi.api.id.ScopedGlobalURI;
 import org.mksmart.ecapi.impl.GlobalTypeImpl;
 import org.mksmart.ecapi.impl.format.JsonSimplifiedGenericRepresentationSerializer;
 import org.mksmart.ecapi.web.util.UriRewriter;
-import org.mksmart.ecapi.web.util.SPARQLWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Handles compiled entities given their service-dependent global URIs.
@@ -170,8 +167,7 @@ public class EntityResource extends BaseResource {
                             (IdGenerator) servletContext.getAttribute(IdGenerator.class.getName()));
                     e_rewr = rewriter.rewrite(e, selectNamespace(uriInfo, headers, false));
                 }
-                JSONObject o = 
-		    JsonSimplifiedGenericRepresentationSerializer.serialize(e_rewr, (URI) null);
+                JSONObject o = JsonSimplifiedGenericRepresentationSerializer.serialize(e_rewr, (URI) null);
                 rb = Response.ok((JSONObject) o);
             }
         }
@@ -186,8 +182,8 @@ public class EntityResource extends BaseResource {
         ResponseBuilder rb;
         JSONObject sol = new JSONObject();
         // TODO refer to the compiler instead
-        AssemblyProvider<?> ep = (AssemblyProvider) servletContext
-                .getAttribute(AssemblyProvider.class.getName());
+        AssemblyProvider<?> ep = (AssemblyProvider) servletContext.getAttribute(AssemblyProvider.class
+                .getName());
         JSONArray types = new JSONArray();
         for (URI ut : ep.getSupportedTypes()) {
             String emp = ut.toString();
@@ -214,8 +210,8 @@ public class EntityResource extends BaseResource {
                                 @DefaultValue("false") @QueryParam("debug") boolean debug,
                                 @Context HttpHeaders headers,
                                 @Context UriInfo uriInfo) {
-        AssemblyProvider<?> ep = (AssemblyProvider) servletContext
-                .getAttribute(AssemblyProvider.class.getName());
+        AssemblyProvider<?> ep = (AssemblyProvider) servletContext.getAttribute(AssemblyProvider.class
+                .getName());
         DebuggableEntityCompiler compiler = (DebuggableEntityCompiler) servletContext
                 .getAttribute(DebuggableEntityCompiler.class.getName());
         GlobalType ty = new GlobalTypeImpl(ScopedGlobalURI.parse("type/global:id/" + typename));
@@ -335,18 +331,25 @@ public class EntityResource extends BaseResource {
                 }
             }
         }
-	// MDA: remove this - the APIKeyDriver should return the open data sets
-	// from authorisation
-	/*        if (apiKeys == null || apiKeys.isEmpty()
-            || (apiKeys.size() == 1 && "null".equals(apiKeys.iterator().next()))) {
-            log.info("No API key supplied by client. Will retrieve open data only.");
-            return null; // not an empty set!
-	    }*/
+        // MDA: remove this - the APIKeyDriver should return the open data sets
+        // from authorisation
+        /*
+         * if (apiKeys == null || apiKeys.isEmpty() || (apiKeys.size() == 1 &&
+         * "null".equals(apiKeys.iterator().next()))) {
+         * log.info("No API key supplied by client. Will retrieve open data only."); return null; // not an
+         * empty set! }
+         */
         ApiKeyDriver keyDrv = (ApiKeyDriver) servletContext.getAttribute(ApiKeyDriver.class.getName());
         // if (!keyDrv.exists(apiKeys.toArray(new String[0]))) throw new RuntimeException(
         // "Unmatching API keys found. Deal with it.");
-	if (apiKeys == null || apiKeys.isEmpty()) return keyDrv.getDataSources();
-        else return keyDrv.getDataSources(apiKeys.toArray(new String[0]));
+        try {
+            if (apiKeys == null || apiKeys.isEmpty()) return keyDrv.getDataSources();
+            else return keyDrv.getDataSources(apiKeys.toArray(new String[0]));
+        } catch (NotCheckingRightsException e) {
+            if (keyDrv instanceof PermissiveKeyDriver) return null;
+            else throw new RuntimeException(
+                    "Non-permissive authorisation checker refused to check for access rights. This should not happen.");
+        }
     }
 
     protected void init(UriInfo uriInfo, HttpHeaders headers) {
@@ -392,7 +395,6 @@ public class EntityResource extends BaseResource {
         }
         return dsSupport;
     }
-
 
     @OPTIONS
     public Response options(@Context HttpHeaders headers, @Context UriInfo uriInfo) {

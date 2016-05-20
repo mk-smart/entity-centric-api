@@ -18,6 +18,8 @@ public class Config {
 
     public static final String KEYMGMT_ISAPI_USER = _KEYMGMT_PREFIX + ".isapi.user";
 
+    public static final String KEYMGMT_KEY_OPENDATA = _KEYMGMT_PREFIX + ".opendatakey";
+
     public static final String KEYMGMT_MYSQL_DB = _KEYMGMT_PREFIX + ".mysql.db";
 
     public static final String KEYMGMT_MYSQL_HOST = _KEYMGMT_PREFIX + ".mysql.host";

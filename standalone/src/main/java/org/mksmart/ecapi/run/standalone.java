@@ -1,6 +1,10 @@
 package org.mksmart.ecapi.run;
 
 import static org.mksmart.ecapi.access.Config.KEYMGMT_ISAPI_HOST;
+import static org.mksmart.ecapi.access.Config.KEYMGMT_KEY_OPENDATA;
+import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_DB;
+import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_HOST;
+import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_USER;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -23,6 +27,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.json.JSONObject;
 import org.mksmart.ecapi.access.ApiKeyDriver;
+import org.mksmart.ecapi.access.PermissiveKeyDriver;
 import org.mksmart.ecapi.access.auth.VisibilityChecker;
 import org.mksmart.ecapi.access.isapi.IsapiKeyDriver;
 import org.mksmart.ecapi.access.mysql.SsimpleAuthKeyDriver;
@@ -176,7 +181,7 @@ public class standalone {
             else log.warn("Entity store implementation '{}' does not support lookahead of cache hits.", stor
                     .getClass().getName());
             if (cache == null) log.warn("Could not initialise cache. All queries will be performed fresh.");
-           sctx.setAttribute(DebuggableEntityCompiler.class.getName(), new EntityCompilerImpl(ep, ctlg,
+            sctx.setAttribute(DebuggableEntityCompiler.class.getName(), new EntityCompilerImpl(ep, ctlg,
                     cache, stor));
         } catch (IllegalStateException | ClientAuthenticationException ex) {
             log.error("Illegal state caught for compiler database.");
@@ -189,14 +194,25 @@ public class standalone {
             log.error("Exiting now");
             System.exit(UNREACHABLE_COMPILER);
         }
+
         // Instantiate access components
-        sctx.setAttribute(VisibilityChecker.class.getName(), new VisibilityChecker(ctlg));
-        // Priority to ISAPI key drivernti
         Properties pro = couchConfig.asProperties();
-        ApiKeyDriver driver = pro.containsKey(KEYMGMT_ISAPI_HOST) ? new IsapiKeyDriver(pro)
-                : new SsimpleAuthKeyDriver(pro);	
+        sctx.setAttribute(VisibilityChecker.class.getName(), new VisibilityChecker(ctlg));
+        ApiKeyDriver driver = selectDriver(pro);
+        log.debug("Instantiated permission checker of type {}", driver.getClass());
         sctx.setAttribute(ApiKeyDriver.class.getName(), driver);
-	sctx.setAttribute(SPARQLWriter.class.getName(), new SPARQLWriter(pro.getProperty("org.mksmart.web.util.sparql.writer")));
+        sctx.setAttribute(SPARQLWriter.class.getName(),
+            new SPARQLWriter(pro.getProperty("org.mksmart.web.util.sparql.writer")));
+
+    }
+
+    private static ApiKeyDriver selectDriver(Properties configuration) {
+        // Priority to ISAPI key driver
+        if (configuration.containsKey(KEYMGMT_ISAPI_HOST)) return new IsapiKeyDriver(configuration);
+        if ((configuration.containsKey(KEYMGMT_MYSQL_HOST) || configuration.containsKey(KEYMGMT_MYSQL_DB) || configuration
+                .containsKey(KEYMGMT_MYSQL_USER)) || configuration.containsKey(KEYMGMT_KEY_OPENDATA)) return new SsimpleAuthKeyDriver(
+                configuration);
+        else return new PermissiveKeyDriver();
     }
 
     @SuppressWarnings("rawtypes")

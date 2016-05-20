@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class EntityFragmentImpl implements EntityFragment {
 
-    protected final Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     /**
      * A forest of provenance trees, associated to dataset names. The roots of the trees are not labelled.
@@ -34,7 +34,7 @@ public abstract class EntityFragmentImpl implements EntityFragment {
 
     @Override
     public void addContributingSource(String dataset, PropertyPath path) {
-        log.debug("Dataset <{}> contributes (potentially partial) path {}", dataset, path);
+        log.trace("Dataset <{}> contributes (potentially partial) path {}", dataset, path);
         ProvenanceTreeNode node;
         if (provenanceMap.containsKey(dataset)) node = provenanceMap.get(dataset);
         else {

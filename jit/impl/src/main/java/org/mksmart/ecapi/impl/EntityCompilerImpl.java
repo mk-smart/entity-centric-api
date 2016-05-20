@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -127,7 +128,7 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
         Map<URI,List<Query>> queries = new HashMap<>();
         for (AssemblyProvider<?> ap : providers) {
             log.debug("Requesting assembly from provider of type {}", ap.getClass());
-            Map<URI,List<Query>> tqueries;            
+            Map<URI,List<Query>> tqueries;
             if (ap instanceof DebuggableAssemblyProvider) tqueries = ((DebuggableAssemblyProvider) ap)
                     .getQueryMap(gid, datasets, debug);
             else tqueries = ap.getQueryMap(gid, datasets);
@@ -436,7 +437,9 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
                 URI endpoint = ds2e.getValue();
                 log.debug("Associating <{}> to <{}>", endpoint, ds2e.getKey());
                 List<Query> lq = queries.get(ds2e.getKey());
-                if (queriesByEndpoint.containsKey(endpoint)) queriesByEndpoint.get(endpoint).addAll(lq);
+                if (lq == null) lq = new LinkedList<Query>();
+                if (queriesByEndpoint.containsKey(endpoint)) 
+                    queriesByEndpoint.get(endpoint).addAll(lq);
                 else queriesByEndpoint.put(endpoint, lq);
                 log.debug(" ... queries : {}", queriesByEndpoint.get(endpoint));
             }
