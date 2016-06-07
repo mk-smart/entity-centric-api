@@ -1,0 +1,112 @@
+{
+	"swagger" : "2.0",
+	"info" : {
+		"description" : "A simple Web API for registering and accessing extracted data for the AFEL data platform",
+		"title" : "AFEL data API",
+		"version" : "0.0.1"
+	},
+	"host" : "data.afel-project.eu",
+	"basePath" : "/v1",
+	"schemes" : ["http"],
+	"paths" : {
+		"/dataset" : {
+			"get" : {
+				"summary" : "Lists all registered datasets.",
+				"produces" : ["application/json"],
+				"responses" : {
+					"default" : {
+						"description" : "A list of dataset UUIDs"
+					}
+				}
+			},
+			"post" : {
+				"summary" : "Creates a new dataset with the supplied mnenomic name and generates a UUID for it.",
+				"operationId" : "createDatasetWithName",
+				"consumes" : ["application/x-www-form-urlencoded"],
+				"produces" : ["application/json"],
+				"parameters" : [{
+						"name" : "name",
+						"in" : "formData",
+						"description" : "desired mnemonic name for the new dataset",
+						"required" : true,
+						"type" : "string"
+					}
+				],
+				"responses" : {
+					"201" : {
+						"description" : "Dataset has been created."
+					},
+					"400" : {
+						"description" : "Invalid API key supplied"
+					},
+					"403" : {
+						"description" : "Dataset creation is not authorised for this API key"
+					},
+					"409" : {
+						"description" : "A dataset with the supplied name already exists"
+					}
+				},
+				"security" : [{
+						"api_key" : []
+					}
+				]
+			}
+		},
+		"/dataset/{datasetUuid}" : {
+			"get" : {
+				"summary" : "Returns the metadata of this datasets, including hooks to the data themselves.",
+				"produces" : ["application/json"],
+				"parameters" : [{
+						"name" : "datasetUuid",
+						"in" : "path",
+						"description" : "Unique identifier of the dataset.",
+						"required" : true,
+						"type" : "string"
+					}
+				],
+				"responses" : {
+					"200" : {
+						"description" : "The dataset metadata"
+					}
+				}
+			},
+			"put" : {
+				"summary" : "Creates a new dataset with the supplied UUID.",
+				"parameters" : [{
+						"name" : "datasetUuid",
+						"in" : "path",
+						"description" : "Unique identifier of the dataset.",
+						"required" : true,
+						"type" : "string"
+					}
+				],
+				"responses" : {
+					"201" : {
+						"description" : "Dataset has been created."
+					},
+					"400" : {
+						"description" : "Invalid API key supplied"
+					},
+					"403" : {
+						"description" : "Dataset creation is not authorised for this API key"
+					},
+					"409" : {
+						"description" : "Dataset already exists"
+					}
+				},
+				"security" : [{
+						"api_key" : []
+					}
+				]
+			}
+		}
+	},
+	"securityDefinitions" : {
+		"api_key" : {
+			"type" : "apiKey",
+			"name" : "api_key",
+			"description" : "Not a big fan of having it as a query param anyway.",
+			"in" : "query"
+		}
+	}
+}
