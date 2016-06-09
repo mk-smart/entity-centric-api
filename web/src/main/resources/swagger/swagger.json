@@ -8,10 +8,10 @@
 	"host" : "data.afel-project.eu",
 	"basePath" : "/v1",
 	"schemes" : ["http"],
-		"tags" : [{
+	"tags" : [{
 			"name" : "dataset",
 			"description" : "Operations on datasets"
-		},{
+		}, {
 			"name" : "entity",
 			"description" : "Access to aggregated entity data"
 		}
@@ -19,7 +19,7 @@
 	"paths" : {
 		"/dataset" : {
 			"get" : {
-			  "tags" : ["dataset"],
+				"tags" : ["dataset"],
 				"summary" : "Lists all registered datasets.",
 				"produces" : ["application/json"],
 				"responses" : {
@@ -29,7 +29,7 @@
 				}
 			},
 			"post" : {
-			  "tags" : ["dataset"],
+				"tags" : ["dataset"],
 				"summary" : "Creates a new dataset with the supplied mnenomic name and generates a UUID for it. If the name is already in use, it will NOT be created.",
 				"operationId" : "createDatasetWithName",
 				"consumes" : ["application/x-www-form-urlencoded"],
@@ -64,7 +64,7 @@
 		},
 		"/dataset/{datasetUuid}" : {
 			"get" : {
-			  "tags" : ["dataset"],
+				"tags" : ["dataset"],
 				"summary" : "Returns the metadata of this datasets, including hooks to the data themselves.",
 				"produces" : ["application/json"],
 				"parameters" : [{
@@ -82,7 +82,7 @@
 				}
 			},
 			"post" : {
-			  "tags" : ["dataset"],
+				"tags" : ["dataset"],
 				"summary" : "Adds RDF data to a dataset.",
 				"operationId" : "addDataToDataset",
 				"consumes" : ["application/x-www-form-urlencoded"],
@@ -92,20 +92,20 @@
 						"description" : "Unique identifier of the dataset.",
 						"required" : true,
 						"type" : "string"
-					},{
+					}, {
 						"name" : "rdf",
 						"description" : "The raw RDF data",
 						"in" : "formData",
 						"required" : true,
 						"type" : "string"
-					},{
+					}, {
 						"name" : "replace",
 						"description" : "Where the dataset should be replaced and its old data cleared",
 						"in" : "formData",
 						"required" : false,
 						"default" : false,
 						"type" : "boolean"
-					},{
+					}, {
 						"name" : "format",
 						"description" : "The format of the RDF data (MIME type)",
 						"in" : "formData",
@@ -134,7 +134,7 @@
 				]
 			},
 			"put" : {
-			  "tags" : ["dataset"],
+				"tags" : ["dataset"],
 				"summary" : "Creates a new dataset with the supplied UUID.",
 				"parameters" : [{
 						"name" : "datasetUuid",
@@ -163,9 +163,10 @@
 					}
 				]
 			}
-		}, "/dataset/{datasetUuid}/grant" : {
+		},
+		"/dataset/{datasetUuid}/grant" : {
 			"post" : {
-			  "tags" : ["dataset"],
+				"tags" : ["dataset"],
 				"summary" : "Grants an access right to a dataset.",
 				"produces" : ["application/json"],
 				"parameters" : [{
@@ -174,19 +175,19 @@
 						"description" : "Unique identifier of the dataset.",
 						"required" : true,
 						"type" : "string"
-					},{
+					}, {
 						"name" : "grantee",
 						"in" : "query",
 						"description" : "The API key that is being granted the right.",
 						"required" : true,
 						"type" : "string"
-					},{
+					}, {
 						"name" : "right",
 						"in" : "query",
 						"description" : "The right to be granted.",
 						"required" : true,
 						"type" : "string",
-						"enum" : ["read","write","grant"]
+						"enum" : ["read", "write", "grant"]
 					}
 				],
 				"responses" : {
@@ -205,9 +206,10 @@
 					}
 				]
 			}
-		}, "/dataset/{datasetUuid}/revoke" : {
+		},
+		"/dataset/{datasetUuid}/revoke" : {
 			"post" : {
-			  "tags" : ["dataset"],
+				"tags" : ["dataset"],
 				"summary" : "Revokes an access right from an API key on a dataset.",
 				"produces" : ["application/json"],
 				"parameters" : [{
@@ -216,19 +218,19 @@
 						"description" : "Unique identifier of the dataset.",
 						"required" : true,
 						"type" : "string"
-					},{
+					}, {
 						"name" : "grantee",
 						"in" : "query",
 						"description" : "The API key that is being revoked the right.",
 						"required" : true,
 						"type" : "string"
-					},{
+					}, {
 						"name" : "right",
 						"in" : "query",
 						"description" : "The right to be revoked.",
 						"required" : true,
 						"type" : "string",
-						"enum" : ["read","write","grant"]
+						"enum" : ["read", "write", "grant"]
 					}
 				],
 				"responses" : {
@@ -247,26 +249,28 @@
 					}
 				]
 			}
-		}, "/entity" : {
-		  "get" : {
-		    "tags" : ["entity"],
+		},
+		"/entity" : {
+			"get" : {
+				"tags" : ["entity"],
 				"produces" : ["application/json"],
-		    "responses" : {
-		      "200" : {
+				"responses" : {
+					"200" : {
 						"description" : "Metadata of the entity service and available types."
 					}
-		    },
+				},
 				"security" : [{
 						"api_key" : []
 					}
 				]
-		  }
-		}, "/entity/{dataQuery}" : {
-		  "get" : {
-		    "tags" : ["entity"],
-  		  "summary" : "The primary method to get aggregated entity data",
-  		  "description" : "Returns all the data on the entity/ies that match the supplied data query, aggregated from the datasets that can be accessed by the supplied API key.",
-		    "produces" : ["application/json"],
+			}
+		},
+		"/entity/{dataQuery}" : {
+			"get" : {
+				"tags" : ["entity"],
+				"summary" : "The primary method to get aggregated entity data",
+				"description" : "Returns all the data on the entity/ies that match the supplied data query, aggregated from the datasets that can be accessed by the supplied API key.",
+				"produces" : ["application/json"],
 				"parameters" : [{
 						"name" : "dataQuery",
 						"in" : "path",
@@ -275,16 +279,16 @@
 						"type" : "string"
 					}
 				],
-		    "responses" : {
-		      "200" : {
+				"responses" : {
+					"200" : {
 						"description" : "The entity data. This response is returned even if there are no data (no 404 is ever returned by the entity API)."
 					}
-		    },
+				},
 				"security" : [{
 						"api_key" : []
 					}
 				]
-		  }
+			}
 		}
 	},
 	"securityDefinitions" : {
