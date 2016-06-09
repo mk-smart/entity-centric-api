@@ -38,6 +38,17 @@ public class LocalDocumentProvider implements DocumentProvider<JSONObject> {
     }
 
     @Override
+    public JSONObject getDocuments(String... keys) {
+        String u = this.base + '/' + this.db + '/' + "_all_docs?include_docs=true";
+        return getResource(u, keys);
+    }
+
+    @Override
+    public JSONObject getReducedView(String designDocId, String viewId, boolean group, String... keys) {
+        return getView(designDocId, viewId, keys);
+    }
+
+    @Override
     public JSONObject getResource(String url, String... keys) {
         InputStream in;
         try {

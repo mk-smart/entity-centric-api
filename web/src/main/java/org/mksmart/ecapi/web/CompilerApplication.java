@@ -2,10 +2,10 @@ package org.mksmart.ecapi.web;
 
 import java.util.HashSet;
 import java.util.Set;
-
 import javax.ws.rs.core.Application;
 
 import org.mksmart.ecapi.web.resources.CompilerResource;
+import org.mksmart.ecapi.web.resources.DatasetResource;
 import org.mksmart.ecapi.web.resources.EntityResourceWithProvenance;
 
 /**
@@ -22,6 +22,8 @@ public class CompilerApplication extends Application {
         classes.add(CompilerResource.class);
         // classes.add(EntityResource.class);
         classes.add(EntityResourceWithProvenance.class);
+	/* MDA */
+        classes.add(DatasetResource.class);
         return classes;
     }
 

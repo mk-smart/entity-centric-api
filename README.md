@@ -35,7 +35,7 @@ There you will find a file called `ecapi.launcher-[version].jar`. You can run th
 ## Debugging the API
 
 To use a custom log configuration, set VM parameter -Dlog4j.configuration=file:log4j.properties
-
+ 
 To debug in Eclipse:
 
     $ java -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8453,server=y,suspend=n -Dlog4j.configuration=file:log4j.properties -jar ecapi.launcher-[version].jar -c [config_file] -p [port]

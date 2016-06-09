@@ -17,11 +17,24 @@
 		<relativePath>..</relativePath>
 	</parent>
 
+  <repositories>
+     <repository>
+       <id>reasoners-hermit-embedded</id>
+       <url>file://localhost/${project.basedir}/src/main/resources/maven/repo</url>
+       <releases>
+         <updatePolicy>always</updatePolicy>
+       </releases>
+       <snapshots>
+         <updatePolicy>always</updatePolicy>
+       </snapshots>
+     </repository>
+  </repositories>
+
 	<build>
 	</build>
 
 	<dependencies>
-
+	
 		<!-- project tax -->
 		<dependency>
 			<groupId>org.mksmart</groupId>
@@ -34,6 +47,13 @@
 			<version>${datahub-version}</version>
 		</dependency>
 
+		<!-- commons tax -->
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.3.6</version> <!-- compatible with commons-codec 1.6 -->
+		</dependency>
+		
 		<!-- client tax -->
 		<dependency>
 			<groupId>mysql</groupId>
@@ -62,6 +82,12 @@
 			<artifactId>log4j</artifactId>
 			<version>1.2.16</version>
 			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+		  <groupId>org.mksmart</groupId>
+		  <artifactId>ssimple-auth</artifactId>
+		  <version>0.2.1</version>
 		</dependency>
 
 	</dependencies>

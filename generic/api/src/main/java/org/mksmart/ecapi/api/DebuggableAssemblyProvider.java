@@ -8,7 +8,7 @@ import java.util.Set;
 import org.mksmart.ecapi.api.id.GlobalURI;
 import org.mksmart.ecapi.api.query.Query;
 
-public interface DebuggableAssemblyProvider extends AssemblyProvider, DebuggableSupportRetriever {
+public interface DebuggableAssemblyProvider<F> extends AssemblyProvider<F>, DebuggableSupportRetriever {
 
     public Map<URI,List<Query>> getQueryMap(GlobalType gtype, boolean debug);
 

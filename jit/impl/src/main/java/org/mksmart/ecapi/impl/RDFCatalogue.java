@@ -36,7 +36,8 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
  * @author alexdma
  * 
  */
-public class RDFCatalogue extends HashMap<URI,Set<URI>> implements Catalogue, DebuggableAssemblyProvider {
+public class RDFCatalogue extends HashMap<URI,Set<URI>> implements Catalogue,
+        DebuggableAssemblyProvider<String> {
 
     private static final String _NS = "http://mksmart.org/jit/term/";
 
@@ -92,7 +93,7 @@ public class RDFCatalogue extends HashMap<URI,Set<URI>> implements Catalogue, De
 
     @Override
     public Set<String> getCandidateTypes(GlobalURI guri) {
-        throw new NotImplementedException("NIY");
+        throw new NotImplementedException("NIY - this class is a highly experimental implementation");
     }
 
     @Override
@@ -119,8 +120,23 @@ public class RDFCatalogue extends HashMap<URI,Set<URI>> implements Catalogue, De
     }
 
     @Override
+    public String getMicrocompiler(String name, GlobalType type) {
+        throw new NotImplementedException("NIY - this class is a highly experimental implementation");
+    }
+
+    @Override
+    public String getMicrocompiler(String name, GlobalType type, URI dataSource) {
+        throw new NotImplementedException("NIY - this class is a highly experimental implementation");
+    }
+
+    @Override
     public String getMicrocompiler(URI type) {
         return microcompilers.get(type);
+    }
+
+    @Override
+    public Map<String,String> getMicrocompilers(GlobalType type, URI dataSource) {
+        throw new NotImplementedException("NIY - this class is a highly experimental implementation");
     }
 
     @Override
@@ -137,7 +153,7 @@ public class RDFCatalogue extends HashMap<URI,Set<URI>> implements Catalogue, De
 
     @Override
     public Map<URI,List<Query>> getQueryMap(GlobalType gtype) {
-        throw new NotImplementedException("NIY - bear with me.");
+        throw new NotImplementedException("NIY - this class is a highly experimental implementation");
     }
 
     @Override
@@ -148,7 +164,7 @@ public class RDFCatalogue extends HashMap<URI,Set<URI>> implements Catalogue, De
 
     @Override
     public Map<URI,List<Query>> getQueryMap(GlobalURI guri) {
-        throw new NotImplementedException("NIY - bear with me.");
+        throw new NotImplementedException("NIY - this class is a highly experimental implementation");
     }
 
     @Override
@@ -185,12 +201,12 @@ public class RDFCatalogue extends HashMap<URI,Set<URI>> implements Catalogue, De
 
     @Override
     public Set<URI> getTypeAliases(GlobalType type) {
-        throw new NotImplementedException("NIY - bear with me.");
+        throw new NotImplementedException("NIY - this class is a highly experimental implementation");
     }
 
     @Override
     public TypeSupport getTypeSupport(GlobalType type) {
-        throw new NotImplementedException("NIY - bear with me.");
+        throw new NotImplementedException("NIY - this class is a highly experimental implementation");
     }
 
     @Override
@@ -228,7 +244,7 @@ public class RDFCatalogue extends HashMap<URI,Set<URI>> implements Catalogue, De
 
     @Override
     public Map<URI,String> getUuids(URI... datasetIds) {
-        throw new NotImplementedException("NIY - bear with me.");
+        throw new NotImplementedException("NIY - this class is a highly experimental implementation");
     }
 
 }

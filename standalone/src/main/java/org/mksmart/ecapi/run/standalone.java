@@ -1,8 +1,15 @@
 package org.mksmart.ecapi.run;
 
+import static org.mksmart.ecapi.access.Config.KEYMGMT_ISAPI_HOST;
+import static org.mksmart.ecapi.access.Config.KEYMGMT_KEY_OPENDATA;
+import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_DB;
+import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_HOST;
+import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_USER;
+
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Properties;
 
 import javax.servlet.ServletContext;
 
@@ -20,8 +27,10 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.json.JSONObject;
 import org.mksmart.ecapi.access.ApiKeyDriver;
+import org.mksmart.ecapi.access.PermissiveKeyDriver;
 import org.mksmart.ecapi.access.auth.VisibilityChecker;
-import org.mksmart.ecapi.access.mysql.MySqlKeyDriver;
+import org.mksmart.ecapi.access.isapi.IsapiKeyDriver;
+import org.mksmart.ecapi.access.mysql.SsimpleAuthKeyDriver;
 import org.mksmart.ecapi.api.AssemblyProvider;
 import org.mksmart.ecapi.api.Catalogue;
 import org.mksmart.ecapi.api.DebuggableEntityCompiler;
@@ -40,6 +49,7 @@ import org.mksmart.ecapi.couchdb.storage.CacheImpl;
 import org.mksmart.ecapi.couchdb.storage.FragmentPerQueryStore;
 import org.mksmart.ecapi.impl.EntityCompilerImpl;
 import org.mksmart.ecapi.impl.storage.NonStoringEntityStore;
+import org.mksmart.ecapi.web.util.SPARQLWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -184,9 +194,25 @@ public class standalone {
             log.error("Exiting now");
             System.exit(UNREACHABLE_COMPILER);
         }
+
         // Instantiate access components
+        Properties pro = couchConfig.asProperties();
         sctx.setAttribute(VisibilityChecker.class.getName(), new VisibilityChecker(ctlg));
-        sctx.setAttribute(ApiKeyDriver.class.getName(), new MySqlKeyDriver(couchConfig.asProperties()));
+        ApiKeyDriver driver = selectDriver(pro);
+        log.debug("Instantiated permission checker of type {}", driver.getClass());
+        sctx.setAttribute(ApiKeyDriver.class.getName(), driver);
+        sctx.setAttribute(SPARQLWriter.class.getName(),
+            new SPARQLWriter(pro.getProperty("org.mksmart.web.util.sparql.writer")));
+
+    }
+
+    private static ApiKeyDriver selectDriver(Properties configuration) {
+        // Priority to ISAPI key driver
+        if (configuration.containsKey(KEYMGMT_ISAPI_HOST)) return new IsapiKeyDriver(configuration);
+        if ((configuration.containsKey(KEYMGMT_MYSQL_HOST) || configuration.containsKey(KEYMGMT_MYSQL_DB) || configuration
+                .containsKey(KEYMGMT_MYSQL_USER)) || configuration.containsKey(KEYMGMT_KEY_OPENDATA)) return new SsimpleAuthKeyDriver(
+                configuration);
+        else return new PermissiveKeyDriver();
     }
 
     @SuppressWarnings("rawtypes")

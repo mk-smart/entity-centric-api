@@ -43,26 +43,32 @@ public class RemoteDocumentProvider implements DocumentProvider<JSONObject> {
 
     private Logger log = LoggerFactory.getLogger(getClass());
 
+    public RemoteDocumentProvider(URL serviceUrl, String dbName) {
+        this(serviceUrl, dbName, null);
+    }
+
     public RemoteDocumentProvider(URL serviceUrl, String dbName, Credentials credentials) {
         this.serviceUrl = serviceUrl;
         this.dbName = dbName;
         ClientConfig config = new ClientConfig();
-        BasicAuthSecurityHandler auth = new BasicAuthSecurityHandler();
-        // Only set credentials if there is a username, no spaces around
-        if (credentials.getUserPrincipal() != null) {
-            String un = new String(credentials.getUserPrincipal().getName()).trim();
-            if (!un.isEmpty()) {
-                auth.setUserName(un);
-                if (credentials.getPassword() != null) {
-                    String pw = new String(credentials.getPassword()).trim();
-                    if (!pw.isEmpty()) {
-                        auth.setPassword(pw);
+        if (credentials != null) {
+            BasicAuthSecurityHandler auth = new BasicAuthSecurityHandler();
+            // Only set credentials if there is a username, no spaces around
+            if (credentials.getUserPrincipal() != null) {
+                String un = new String(credentials.getUserPrincipal().getName()).trim();
+                if (!un.isEmpty()) {
+                    auth.setUserName(un);
+                    if (credentials.getPassword() != null) {
+                        String pw = new String(credentials.getPassword()).trim();
+                        if (!pw.isEmpty()) {
+                            auth.setPassword(pw);
+                        }
                     }
-                }
 
+                }
             }
+            config.handlers(auth);
         }
-        config.handlers(auth);
         client = new RestClient(config);
         if (!healthCheck()) throw new IllegalStateException("Compiler database health check failed.");
     }
@@ -70,7 +76,6 @@ public class RemoteDocumentProvider implements DocumentProvider<JSONObject> {
     @Override
     public JSONObject getDocument(String documentId) {
         log.debug("Requested CouchDB document {}", documentId);
-
         String didEnc;
         try {
             didEnc = new URLCodec().encode(documentId);
@@ -81,6 +86,40 @@ public class RemoteDocumentProvider implements DocumentProvider<JSONObject> {
         }
         String u = this.serviceUrl.toString() + '/' + this.dbName + '/' + didEnc;
         return getResource(u);
+    }
+
+    @Override
+    public JSONObject getDocuments(String... keys) {
+        log.debug("Requested all CouchDB documents");
+        for (String k : keys)
+            log.debug(" ... with key \"{}\"", k);
+        String u = this.serviceUrl.toString() + '/' + this.dbName + '/' + "_all_docs?include_docs=true";
+        return getResource(u, keys);
+    }
+
+    @Override
+    public JSONObject getReducedView(String designDocId, String viewId, boolean group, String... keys) {
+        log.debug("Requested CouchDB view {}:{}", designDocId, viewId);
+        log.debug(" ... reduce grouping = {}", group);
+        for (String k : keys)
+            log.debug(" ... with key \"{}\"", k);
+        try {
+            designDocId = new URLCodec().encode(designDocId);
+        } catch (EncoderException e) {
+            log.error("Retrieval of view '{}/view/{}' FAILED. ", designDocId, viewId);
+            log.error(" ... reason: could not URLencode design document ID '{}'.", designDocId);
+            throw new RuntimeException(e);
+        }
+        try {
+            viewId = new URLCodec().encode(viewId);
+        } catch (EncoderException e) {
+            log.error("Retrieval of view '{}/view/{}' FAILED. ", designDocId, viewId);
+            log.error(" ... reason: could not URLencode view name '{}'.", viewId);
+            throw new RuntimeException(e);
+        }
+        String u = this.serviceUrl.toString() + '/' + this.dbName + '/' + "_design" + '/' + designDocId + '/'
+                   + "_view" + '/' + viewId + '?' + "group=" + group;
+        return getResource(u, keys);
     }
 
     @Override

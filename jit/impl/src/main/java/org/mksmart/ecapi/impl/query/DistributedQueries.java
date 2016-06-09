@@ -1,6 +1,7 @@
 package org.mksmart.ecapi.impl.query;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -29,6 +30,7 @@ import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.sparql.engine.http.QueryEngineHTTP;
+import com.hp.hpl.jena.sparql.engine.http.QueryExceptionHTTP;
 
 /**
  * Utility class for executing distributed queries and producing an aggregated result.
@@ -251,8 +253,15 @@ public class DistributedQueries {
     private static void handleException(Query wrappedQuery, URI sparqlEndpoint, Exception ex) {
         log.error("Query failed.");
         log.error(" ... Endpoint was : {}", sparqlEndpoint);
+        if (ex instanceof QueryExceptionHTTP) {
+            log.error(" ... Reason: HTTP query transport failed. Message was: {}", ex.getMessage());
+        } else if (ex instanceof ConnectException) {
+            log.error(" ... Reason: could not connect to endpoint. Message was: {}", ex.getMessage());
+        } else {
+            log.error(" ... Unhandled exception type {}.", ex.getClass());
+            log.error(" ... Stack trace follows.", ex);
+        }
         log.error(" ... Query was:\n{}.", wrappedQuery.getRawQueryObject(com.hp.hpl.jena.query.Query.class));
-        log.error(" ... Stack trace follows.", ex);
     }
 
 }

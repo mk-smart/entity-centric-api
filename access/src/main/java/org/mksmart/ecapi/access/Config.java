@@ -9,8 +9,16 @@ public class Config {
     public static final String KEYMGMT_AUTHSVR_USEPREFIX = _KEYMGMT_PREFIX + ".authsvr.useprefix";
 
     public static final String KEYMGMT_DATASET_PREFIX = _KEYMGMT_PREFIX + ".datasetprefix";
-    
+
     public static final String KEYMGMT_FORCE_AUTHENTICATE = _KEYMGMT_PREFIX + ".forceauthenticate";
+
+    public static final String KEYMGMT_ISAPI_HOST = _KEYMGMT_PREFIX + ".isapi.host";
+
+    public static final String KEYMGMT_ISAPI_PASSWORD = _KEYMGMT_PREFIX + ".isapi.password";
+
+    public static final String KEYMGMT_ISAPI_USER = _KEYMGMT_PREFIX + ".isapi.user";
+
+    public static final String KEYMGMT_KEY_OPENDATA = _KEYMGMT_PREFIX + ".opendatakey";
 
     public static final String KEYMGMT_MYSQL_DB = _KEYMGMT_PREFIX + ".mysql.db";
 

@@ -111,7 +111,6 @@ public class AuthServerPolicyChecker {
     }
 
     protected JSONObject makeRequestEntity(Set<String> datasets, String user, Format format) {
-
         JSONObject obj = new JSONObject();
         obj.put("userId", user);
         JSONArray dsa = new JSONArray();

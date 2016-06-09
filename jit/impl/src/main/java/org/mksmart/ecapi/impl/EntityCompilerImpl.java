@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -108,11 +109,6 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
     public Entity assembleEntity(GlobalURI gid, Set<String> datasets) {
         return assembleEntity(gid, datasets, false);
     }
-    
-    @Override
-    public Catalogue getCatalogue() {
-        return this.catalogue;
-    }
 
     @Override
     public Entity assembleEntity(GlobalURI gid, Set<String> datasets, boolean debug) {
@@ -130,7 +126,7 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
             ((CanonicalGlobalURI) gid).getIdentifer());
 
         Map<URI,List<Query>> queries = new HashMap<>();
-        for (AssemblyProvider ap : providers) {
+        for (AssemblyProvider<?> ap : providers) {
             log.debug("Requesting assembly from provider of type {}", ap.getClass());
             Map<URI,List<Query>> tqueries;
             if (ap instanceof DebuggableAssemblyProvider) tqueries = ((DebuggableAssemblyProvider) ap)
@@ -254,7 +250,7 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
                 representation.addValue(property, val);
                 // Check if this is a unifier, for what properties and with what
                 // transform
-                if (providers != null) for (AssemblyProvider provider : providers)
+                if (providers != null) for (AssemblyProvider<?> provider : providers)
                     try {
                         for (URI tt : provider.getCandidateTypes(property)) {
                             if (!typeSupport.containsKey(tt)) typeSupport.put(tt, new HashSet<URI>());
@@ -409,6 +405,11 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
     }
 
     @Override
+    public Catalogue getCatalogue() {
+        return this.catalogue;
+    }
+
+    @Override
     public Set<AssemblyProvider> getEntityProviders() {
         return this.providers;
     }
@@ -436,7 +437,9 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
                 URI endpoint = ds2e.getValue();
                 log.debug("Associating <{}> to <{}>", endpoint, ds2e.getKey());
                 List<Query> lq = queries.get(ds2e.getKey());
-                if (queriesByEndpoint.containsKey(endpoint)) queriesByEndpoint.get(endpoint).addAll(lq);
+                if (lq == null) lq = new LinkedList<Query>();
+                if (queriesByEndpoint.containsKey(endpoint)) 
+                    queriesByEndpoint.get(endpoint).addAll(lq);
                 else queriesByEndpoint.put(endpoint, lq);
                 log.debug(" ... queries : {}", queriesByEndpoint.get(endpoint));
             }

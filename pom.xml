@@ -12,7 +12,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<datahub-version>1.3-SNAPSHOT</datahub-version>
+		<datahub-version>1.4-SNAPSHOT</datahub-version>
 		<jena-version>2.12.1</jena-version>
 		<org.eclipse.jetty.version>9.2.3.v20140905</org.eclipse.jetty.version>
 		<slf4j-version>1.6.1</slf4j-version>

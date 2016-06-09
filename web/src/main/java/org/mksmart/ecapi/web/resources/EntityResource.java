@@ -31,6 +31,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mksmart.ecapi.access.ApiKeyDriver;
+import org.mksmart.ecapi.access.NotCheckingRightsException;
+import org.mksmart.ecapi.access.PermissiveKeyDriver;
 import org.mksmart.ecapi.api.AssemblyProvider;
 import org.mksmart.ecapi.api.DebuggableEntityCompiler;
 import org.mksmart.ecapi.api.Entity;
@@ -123,7 +125,7 @@ public class EntityResource extends BaseResource {
 
     /**
      * FIXME too much computation going on here
-     * 
+     *
      * @param id
      * @param global
      * @param headers
@@ -180,8 +182,8 @@ public class EntityResource extends BaseResource {
         ResponseBuilder rb;
         JSONObject sol = new JSONObject();
         // TODO refer to the compiler instead
-        AssemblyProvider ep = (AssemblyProvider) servletContext
-                .getAttribute(AssemblyProvider.class.getName());
+        AssemblyProvider<?> ep = (AssemblyProvider) servletContext.getAttribute(AssemblyProvider.class
+                .getName());
         JSONArray types = new JSONArray();
         for (URI ut : ep.getSupportedTypes()) {
             String emp = ut.toString();
@@ -208,8 +210,8 @@ public class EntityResource extends BaseResource {
                                 @DefaultValue("false") @QueryParam("debug") boolean debug,
                                 @Context HttpHeaders headers,
                                 @Context UriInfo uriInfo) {
-        AssemblyProvider ep = (AssemblyProvider) servletContext
-                .getAttribute(AssemblyProvider.class.getName());
+        AssemblyProvider<?> ep = (AssemblyProvider) servletContext.getAttribute(AssemblyProvider.class
+                .getName());
         DebuggableEntityCompiler compiler = (DebuggableEntityCompiler) servletContext
                 .getAttribute(DebuggableEntityCompiler.class.getName());
         GlobalType ty = new GlobalTypeImpl(ScopedGlobalURI.parse("type/global:id/" + typename));
@@ -295,6 +297,7 @@ public class EntityResource extends BaseResource {
         return rb.build();
     }
 
+    // TODO: Add getting key through parameter
     protected Set<String> handleCredentials(HttpHeaders headers, boolean with_debug) {
         Set<String> apiKeys = new HashSet<>();
         String authHeader;
@@ -328,15 +331,25 @@ public class EntityResource extends BaseResource {
                 }
             }
         }
-        if (apiKeys == null || apiKeys.isEmpty()
-            || (apiKeys.size() == 1 && "null".equals(apiKeys.iterator().next()))) {
-            log.info("No API key supplied by client. Will retrieve open data only.");
-            return null; // not an empty set!
-        }
+        // MDA: remove this - the APIKeyDriver should return the open data sets
+        // from authorisation
+        /*
+         * if (apiKeys == null || apiKeys.isEmpty() || (apiKeys.size() == 1 &&
+         * "null".equals(apiKeys.iterator().next()))) {
+         * log.info("No API key supplied by client. Will retrieve open data only."); return null; // not an
+         * empty set! }
+         */
         ApiKeyDriver keyDrv = (ApiKeyDriver) servletContext.getAttribute(ApiKeyDriver.class.getName());
         // if (!keyDrv.exists(apiKeys.toArray(new String[0]))) throw new RuntimeException(
         // "Unmatching API keys found. Deal with it.");
-        return keyDrv.getDataSources(apiKeys.toArray(new String[0]));
+        try {
+            if (apiKeys == null || apiKeys.isEmpty()) return keyDrv.getDataSources();
+            else return keyDrv.getDataSources(apiKeys.toArray(new String[0]));
+        } catch (NotCheckingRightsException e) {
+            if (keyDrv instanceof PermissiveKeyDriver) return null;
+            else throw new RuntimeException(
+                    "Non-permissive authorisation checker refused to check for access rights. This should not happen.");
+        }
     }
 
     protected void init(UriInfo uriInfo, HttpHeaders headers) {

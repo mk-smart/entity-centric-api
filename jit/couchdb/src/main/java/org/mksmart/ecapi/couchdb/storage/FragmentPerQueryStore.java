@@ -57,6 +57,7 @@ public class FragmentPerQueryStore extends RemoteDocumentProvider implements Fra
 
     @Override
     public EntityFragment retrieve(TargetedQuery key) {
+
         long before = System.currentTimeMillis();
         EntityFragment result = null;
         log.debug("Will retrieve cached fragment provided by <{}>", key.getTarget());

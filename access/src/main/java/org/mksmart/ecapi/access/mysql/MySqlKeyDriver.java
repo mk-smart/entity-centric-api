@@ -4,7 +4,7 @@ import static org.mksmart.ecapi.access.Config.KEYMGMT_DATASET_PREFIX;
 import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_DB;
 import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_HOST;
 import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_PASSWORD;
-import static org.mksmart.ecapi.access.Config.*;
+import static org.mksmart.ecapi.access.Config.KEYMGMT_MYSQL_USER;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.mksmart.ecapi.access.ApiKeyDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,6 +146,21 @@ public class MySqlKeyDriver implements ApiKeyDriver {
             log.warn("SQLException caught while trying to close JDBC connection.", ex);
         }
         return result;
+    }
+
+    @Override
+    public boolean hasRight(String key, String resourceID, int right) {
+        throw new UnsupportedOperationException("cannot check the rights of a key");
+    }
+
+    @Override
+    public Set<String> getDataSources() {
+        throw new NotImplementedException("NIY");
+    }
+
+    @Override
+    public boolean grant(String key, String ukey, String resourceID, int right) {
+        throw new NotImplementedException("NIY");
     }
 
 }
