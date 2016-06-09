@@ -8,9 +8,18 @@
 	"host" : "data.afel-project.eu",
 	"basePath" : "/v1",
 	"schemes" : ["http"],
+		"tags" : [{
+			"name" : "dataset",
+			"description" : "Operations on datasets"
+		},{
+			"name" : "entity",
+			"description" : "Access to aggregated entity data"
+		}
+	],
 	"paths" : {
 		"/dataset" : {
 			"get" : {
+			  "tags" : ["dataset"],
 				"summary" : "Lists all registered datasets.",
 				"produces" : ["application/json"],
 				"responses" : {
@@ -20,6 +29,7 @@
 				}
 			},
 			"post" : {
+			  "tags" : ["dataset"],
 				"summary" : "Creates a new dataset with the supplied mnenomic name and generates a UUID for it. If the name is already in use, it will NOT be created.",
 				"operationId" : "createDatasetWithName",
 				"consumes" : ["application/x-www-form-urlencoded"],
@@ -54,6 +64,7 @@
 		},
 		"/dataset/{datasetUuid}" : {
 			"get" : {
+			  "tags" : ["dataset"],
 				"summary" : "Returns the metadata of this datasets, including hooks to the data themselves.",
 				"produces" : ["application/json"],
 				"parameters" : [{
@@ -71,6 +82,7 @@
 				}
 			},
 			"post" : {
+			  "tags" : ["dataset"],
 				"summary" : "Adds RDF data to a dataset.",
 				"operationId" : "addDataToDataset",
 				"consumes" : ["application/x-www-form-urlencoded"],
@@ -122,6 +134,7 @@
 				]
 			},
 			"put" : {
+			  "tags" : ["dataset"],
 				"summary" : "Creates a new dataset with the supplied UUID.",
 				"parameters" : [{
 						"name" : "datasetUuid",
@@ -152,6 +165,7 @@
 			}
 		}, "/dataset/{datasetUuid}/grant" : {
 			"post" : {
+			  "tags" : ["dataset"],
 				"summary" : "Grants an access right to a dataset.",
 				"produces" : ["application/json"],
 				"parameters" : [{
@@ -193,6 +207,7 @@
 			}
 		}, "/dataset/{datasetUuid}/revoke" : {
 			"post" : {
+			  "tags" : ["dataset"],
 				"summary" : "Revokes an access right from an API key on a dataset.",
 				"produces" : ["application/json"],
 				"parameters" : [{
@@ -234,6 +249,7 @@
 			}
 		}, "/entity" : {
 		  "get" : {
+		    "tags" : ["entity"],
 				"produces" : ["application/json"],
 		    "responses" : {
 		      "200" : {
@@ -247,6 +263,7 @@
 		  }
 		}, "/entity/{dataQuery}" : {
 		  "get" : {
+		    "tags" : ["entity"],
   		  "summary" : "The primary method to get aggregated entity data",
   		  "description" : "Returns all the data on the entity/ies that match the supplied data query, aggregated from the datasets that can be accessed by the supplied API key.",
 		    "produces" : ["application/json"],
