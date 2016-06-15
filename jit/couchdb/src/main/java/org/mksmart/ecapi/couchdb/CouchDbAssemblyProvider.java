@@ -128,26 +128,28 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
     }
 
     private Set<String> filterDatasets(JSONObject view, Set<String> datasetNames) {
-        boolean opendata = ( datasetNames == null );
-	log.info("Dataset name = "+datasetNames);
+        boolean opendata = (datasetNames == null);
+        log.debug("Requested datasets : {}", datasetNames);
         Set<String> filtered = new HashSet<>(), checkUs = new HashSet<>();
         JSONArray rows = view.getJSONArray("rows");
         for (int i = 0; i < rows.length(); i++) {
             JSONObject row = rows.getJSONObject(i);
             checkUs.add(row.getString("id"));
         }
-	if (opendata) try {
-		log.info("Hey - open data!!!");
-		filtered = VisibilityChecker.getInstance().filter(checkUs);
-	    } catch (UnavailablePolicyTableException e) {
-		log.error("Denying all data access due to unavailable policy table.");
-		throw new RuntimeException(e);
-	    }
-	else {
+        if (opendata) try {
+            log.info("Request is for all open datasets.");
+            filtered = VisibilityChecker.getInstance().filter(checkUs);
+        } catch (UnavailablePolicyTableException e) {
+            log.error("Denying all data access due to unavailable policy table.");
+            throw new RuntimeException(e);
+        }
+        else {
             filtered.addAll(datasetNames);
             filtered.retainAll(checkUs);
-	}
-	log.info("Filtered = "+filtered);
+        }
+        log.debug("Filtered datasets : {}", datasetNames);
+        log.info("{} datasets filtered in out of {} requested.",
+            datasetNames == null ? "[undefined, all open data]" : filtered.size(), datasetNames.size());
         return filtered;
     }
 
@@ -380,9 +382,9 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
                     if (value.has("dataset")) query = new SparqlTargetedQuery(Query.Type.SPARQL_SELECT,
                             query_text, URI.create(value.getString("dataset")));
                     else query = new SparqlQuery(Query.Type.SPARQL_SELECT, query_text);
-              
+
                 }
-                
+
                 // the dataset spec could have a standard query template
                 else if (value.has("query_tpl")) {
                     log.debug(" ... query template: \"{}\"", value.getString("query_tpl"));
@@ -418,7 +420,7 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
             }
         }
         // If no queries were generated, do general fallback
-	// if (result.isEmpty()) fallbackPostProcess(guri, result);
+        // if (result.isEmpty()) fallbackPostProcess(guri, result);
 
         return result;
     }
@@ -587,16 +589,24 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
         rows = jFuncs.getJSONArray("rows");
         for (int i = 0; i < rows.length(); i++) {
             String ds = rows.getJSONObject(i).getString("id");
-            JSONObject jTyps = rows.getJSONObject(i).getJSONObject("doc").getJSONObject("mks:types");
-            if (jTyps.has(type.getId().toString())) {
-                JSONObject jTyp = jTyps.getJSONObject(type.getId().toString());
-                for (String funcName : funcMap.get(ds)) {
-                    if (jTyp.has(funcName) && !res.containsKey(funcName)) {
-                        log.debug("Getting microcompiler \"{}\" from configuration <{}>", funcName, ds);
-                        res.put(funcName, jTyp.getString(funcName));
+            JSONObject doc = rows.getJSONObject(i).getJSONObject("doc");
+            if (doc.has("type") && "provider-spec".equals(doc.getString("type"))) {
+                if (doc.has("mks:types")) {
+                    JSONObject jTyps = doc.getJSONObject("mks:types");
+                    String typeName = type.getId().toString();
+                    if (jTyps.has(typeName) && jTyps.get(typeName) != null) {
+                        JSONObject jTyp = jTyps.getJSONObject(typeName);
+                        if (funcMap.containsKey(ds) && funcMap.get(ds) != null) for (String funcName : funcMap
+                                .get(ds)) {
+                            if (jTyp.has(funcName) && !res.containsKey(funcName)) {
+                                log.debug("Getting microcompiler \"{}\" from configuration <{}>", funcName,
+                                    ds);
+                                res.put(funcName, jTyp.getString(funcName));
+                            }
+                        }
+                        else log.debug("No function map was found for data source {}.", ds);
                     }
-
-                }
+                } else log.warn("Data source {} is misconfigured. No 'mks:types' field was found.", ds);
             }
         }
         return res;

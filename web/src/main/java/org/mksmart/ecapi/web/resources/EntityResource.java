@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
 @Path("/entity")
 public class EntityResource extends BaseResource {
 
-    protected Logger log = LoggerFactory.getLogger(getClass());
+    private Logger log = LoggerFactory.getLogger(getClass());
 
     @Context
     ServletContext servletContext;
@@ -147,7 +147,7 @@ public class EntityResource extends BaseResource {
         ResponseBuilder rb = null;
         Set<String> dss = handleCredentials(headers, debug);
         if (dss != null) for (String ds : dss)
-            log.info("Dataset {}", ds);
+            log.trace("Dataset {}", ds);
         id = tyype + '/' + id;
         DebuggableEntityCompiler compiler = (DebuggableEntityCompiler) servletContext
                 .getAttribute(DebuggableEntityCompiler.class.getName());
