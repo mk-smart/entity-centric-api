@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.servlet.ServletContext;
 
@@ -19,6 +20,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.UnrecognizedOptionException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.wink.client.ClientAuthenticationException;
 import org.eclipse.jetty.server.Connector;
@@ -44,6 +46,7 @@ import org.mksmart.ecapi.core.LaunchConfiguration;
 import org.mksmart.ecapi.couchdb.Config;
 import org.mksmart.ecapi.couchdb.CouchDbAssemblyProvider;
 import org.mksmart.ecapi.couchdb.CouchDbCatalogue;
+import org.mksmart.ecapi.couchdb.CouchDbSanityChecker;
 import org.mksmart.ecapi.couchdb.id.ProgrammaticGlobalURIGenerator;
 import org.mksmart.ecapi.couchdb.storage.CacheImpl;
 import org.mksmart.ecapi.couchdb.storage.FragmentPerQueryStore;
@@ -61,6 +64,8 @@ import org.slf4j.LoggerFactory;
  */
 public class standalone {
 
+    private static boolean force = false;
+
     /**
      * Command-line parser for standalone application.
      * 
@@ -74,8 +79,11 @@ public class standalone {
 
         public Cli(String[] args) {
             this.args = args;
-            options.addOption("h", "help", false, "Show this help.");
             options.addOption("c", "config", true, "Config file path (required).");
+            options.addOption("f", "force", false,
+                "Attempt to start ECAPI even if the sanity check on its database fails"
+                        + " (WARNING: only use if you know what you are doing!).");
+            options.addOption("h", "help", false, "Show this help.");
             options.addOption("p", "port", true, "Set the port the server will listen to (defaults to 8080).");
         }
 
@@ -83,8 +91,9 @@ public class standalone {
          * Prints help.
          */
         private void help() {
-            String syntax = "java [java-opts] -jar [jarfile] -c [config-file]";
-            new HelpFormatter().printHelp(syntax, options);
+            String syntax = "java [java-opts] -jar [this-jarfile] -c [config-file] [TASK]";
+            String footer = "TASK can be one of init|repair or none at all (for normal ECAPI operation).";
+            new HelpFormatter().printHelp(syntax, "", options, footer);
             System.exit(0);
         }
 
@@ -101,6 +110,13 @@ public class standalone {
                 if (args.length > 0) {
                     if ("init".equals(args[0])) {
                         log.error("Requested init task but this is not implemented yet.");
+                        System.exit(1);
+                    } else if ("repair".equals(args[0])) {
+                        log.error("Requested repair task but this is not implemented yet.");
+                        System.exit(1);
+                    } else {
+                        log.error("Invalid argument " + args[0]);
+                        help();
                         System.exit(1);
                     }
                 }
@@ -121,16 +137,23 @@ public class standalone {
                     log.error("No configuration file specified");
                     help();
                 }
+                if (cmd.hasOption('f')) {
+                    force = true;
+                }
                 if (cmd.hasOption('p')) {
                     port = Integer.parseInt(cmd.getOptionValue('p'));
-                    if (port < 0 && port > 65535) {
+                    if (port < 0 || port > 65535) {
                         log.error("Invalid port number " + port + ". Must be in the range [0,65535].");
                         System.exit(100);
                     }
                 }
+            } catch (UnrecognizedOptionException e) {
+                System.err.println(e.getMessage());
+                help();
             } catch (ParseException e) {
                 log.error("Failed to parse comand line properties", e);
                 help();
+
             }
         }
 
@@ -145,6 +168,8 @@ public class standalone {
     private static final int UNREACHABLE_COMPILER = -1;
 
     private static final int STORE_INITIALIZE = -2;
+
+    private static final int MISCONFIGURED = -3;
 
     /**
      * Initialises the main Web application on a given {@link WebAppContext} by registering shared resources
@@ -168,8 +193,35 @@ public class standalone {
                     (String) lc.get(Config.SERVICE_URL)), (String) lc.get(Config.DB),
                     new UsernamePasswordCredentials((String) lc.get(Config.USERNAME), (String) lc
                             .get(Config.PASSWORD)));
-            AssemblyProvider ep = new CouchDbAssemblyProvider(couchConfig.asProperties(), dp);
+            AssemblyProvider<String> ep = new CouchDbAssemblyProvider(couchConfig.asProperties(), dp);
             sctx.setAttribute(AssemblyProvider.class.getName(), ep);
+
+            log.debug("Performing configuration database for sanity check...");
+            Set<?> failures = new CouchDbSanityChecker(false).getFailingItems(ep);
+            if (failures.isEmpty()) log.info("Configuration environment appears to be sane.");
+            else {
+                log.warn("The following documents of the configuration database are in an unexpected state:");
+                for (Object o : failures)
+                    log.warn(" * {}", o);
+                log.warn("Issues detected in configuration environment! See previous errors and warnings for details.");
+                if (force) log
+                        .warn("force option was set, so attempting startup anyway (at your own risk!)...");
+                else {
+                    log.error("It seems the structure of your configuration database has been tampered with.");
+                    log.error("By default ECAPI will not repair it. If you wish to attempt a repair, make sure the database user"
+                              + " you set in the configuration file has write permissions and relaunch the ECAPI in the following way:");
+                    log.error("");
+                    log.error("    $ java [java-opts] -jar [this-jarfile] -c [config-file] repair");
+                    log.error("");
+                    log.error("Or, to (re)build the database from scratch (and erase all your dataset configurations!):");
+                    log.error("");
+                    log.error("    $ java [java-opts] -jar [this-jarfile] -c [config-file] init");
+                    log.error("");
+                    log.error("Alternatively, you can use the --force option to start ECAPI anyway, but expect things to go funny!");
+                    log.error("Exiting now");
+                    System.exit(MISCONFIGURED);
+                }
+            }
 
             IdGenerator<GlobalURI,?> idgen = new ProgrammaticGlobalURIGenerator(dp);
             sctx.setAttribute(IdGenerator.class.getName(), idgen);
@@ -185,7 +237,7 @@ public class standalone {
                     cache, stor));
         } catch (IllegalStateException | ClientAuthenticationException ex) {
             log.error("Illegal state caught for compiler database.");
-            log.error(" ... is CouchDb running?");
+            log.error(" ... is CouchDb running and healthy?");
             log.error("Exiting now");
             System.exit(UNREACHABLE_COMPILER);
         } catch (MalformedURLException e) {
