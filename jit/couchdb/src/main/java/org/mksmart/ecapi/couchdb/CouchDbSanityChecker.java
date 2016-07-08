@@ -208,6 +208,7 @@ public class CouchDbSanityChecker implements SanityChecker<String> {
             log.warn(" * Field {} : expected value, none found.", fail.getField());
         if (repair) {
             log.info("Attempting repair...");
+            throw new NotImplementedException("NIY");
         }
         for (FieldComparisonFailure fail : res.getFieldFailures()) {
             log.warn(" * Field {} : values do not match.", fail.getField());
