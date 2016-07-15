@@ -1,3 +1,16 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.mksmart.ecapi.couchdb;
 
 import static org.mksmart.ecapi.couchdb.Config.DB;
@@ -57,7 +70,7 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
 
     private String designDocId;
 
-    private DocumentProvider<JSONObject> documentProvider;
+    protected DocumentProvider<JSONObject> documentProvider;
 
     private Logger log = LoggerFactory.getLogger(getClass());
 
@@ -128,26 +141,28 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
     }
 
     private Set<String> filterDatasets(JSONObject view, Set<String> datasetNames) {
-        boolean opendata = ( datasetNames == null );
-	log.info("Dataset name = "+datasetNames);
+        boolean opendata = (datasetNames == null);
+        log.debug("Requested datasets : {}", datasetNames);
         Set<String> filtered = new HashSet<>(), checkUs = new HashSet<>();
         JSONArray rows = view.getJSONArray("rows");
         for (int i = 0; i < rows.length(); i++) {
             JSONObject row = rows.getJSONObject(i);
             checkUs.add(row.getString("id"));
         }
-	if (opendata) try {
-		log.info("Hey - open data!!!");
-		filtered = VisibilityChecker.getInstance().filter(checkUs);
-	    } catch (UnavailablePolicyTableException e) {
-		log.error("Denying all data access due to unavailable policy table.");
-		throw new RuntimeException(e);
-	    }
-	else {
+        if (opendata) try {
+            log.info("Request is for all open datasets.");
+            filtered = VisibilityChecker.getInstance().filter(checkUs);
+        } catch (UnavailablePolicyTableException e) {
+            log.error("Denying all data access due to unavailable policy table.");
+            throw new RuntimeException(e);
+        }
+        else {
             filtered.addAll(datasetNames);
             filtered.retainAll(checkUs);
-	}
-	log.info("Filtered = "+filtered);
+        }
+        log.debug("{} datasets filtered in out of {} requested.",
+            datasetNames == null ? "[undefined, all open data]" : filtered.size(),
+            datasetNames == null ? "[none specifically]" : datasetNames.size());
         return filtered;
     }
 
@@ -174,6 +189,20 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
         throw new NotImplementedException("NIY");
     }
 
+    public DocumentProvider<JSONObject> getDocumentProvider() {
+        return this.documentProvider;
+    }
+
+    @Override
+    public String getMicrocompiler(String name, GlobalType type) {
+        throw new NotImplementedException("NIY");
+    }
+
+    @Override
+    public String getMicrocompiler(String name, GlobalType type, URI dataSource) {
+        throw new NotImplementedException("NIY");
+    }
+
     @Override
     public String getMicrocompiler(URI type) {
         // Design document URL
@@ -192,6 +221,56 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
         Matcher m = p.matcher(rmap);
         if (m.find()) return m.group(1);
         return rmap;
+    }
+
+    @Override
+    public Map<String,String> getMicrocompilers(GlobalType type, URI dataSource) {
+        log.debug("Getting microcompilers for type <{}> from data source <{}>", type, dataSource);
+        Map<String,String> res = new HashMap<>();
+        Map<String,Set<String>> funcMap = new HashMap<>();
+        JSONObject jmap = documentProvider.getReducedView("compile", "jit", true, type.getId().toString());
+        JSONArray rows = jmap.getJSONArray("rows");
+        for (int i = 0; i < rows.length(); i++) {
+            JSONObject row = rows.getJSONObject(i).getJSONObject("value");
+            if (row.has(dataSource.toString())) {
+                JSONObject dsc = row.getJSONObject(dataSource.toString());
+                for (Iterator<?> it = dsc.keys(); it.hasNext();) {
+                    String funcName = (String) it.next();
+                    JSONObject conf = dsc.getJSONObject(funcName);
+                    if (conf.has("config")) {
+                        String confPointer = conf.getString("config");
+                        if (!funcMap.containsKey(confPointer)) funcMap
+                                .put(confPointer, new HashSet<String>());
+                        funcMap.get(confPointer).add(funcName);
+                    }
+                }
+            }
+        }
+        JSONObject jFuncs = documentProvider.getDocuments(funcMap.keySet().toArray(new String[0]));
+        rows = jFuncs.getJSONArray("rows");
+        for (int i = 0; i < rows.length(); i++) {
+            String ds = rows.getJSONObject(i).getString("id");
+            JSONObject doc = rows.getJSONObject(i).getJSONObject("doc");
+            if (doc.has("type") && "provider-spec".equals(doc.getString("type"))) {
+                if (doc.has("mks:types")) {
+                    JSONObject jTyps = doc.getJSONObject("mks:types");
+                    String typeName = type.getId().toString();
+                    if (jTyps.has(typeName) && jTyps.get(typeName) != null) {
+                        JSONObject jTyp = jTyps.getJSONObject(typeName);
+                        if (funcMap.containsKey(ds) && funcMap.get(ds) != null) for (String funcName : funcMap
+                                .get(ds)) {
+                            if (jTyp.has(funcName) && !res.containsKey(funcName)) {
+                                log.debug("Getting microcompiler \"{}\" from configuration <{}>", funcName,
+                                    ds);
+                                res.put(funcName, jTyp.getString(funcName));
+                            }
+                        }
+                        else log.debug("No function map was found for data source {}.", ds);
+                    }
+                } else log.warn("Data source {} is misconfigured. No 'mks:types' field was found.", ds);
+            }
+        }
+        return res;
     }
 
     @Override
@@ -380,9 +459,9 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
                     if (value.has("dataset")) query = new SparqlTargetedQuery(Query.Type.SPARQL_SELECT,
                             query_text, URI.create(value.getString("dataset")));
                     else query = new SparqlQuery(Query.Type.SPARQL_SELECT, query_text);
-              
+
                 }
-                
+
                 // the dataset spec could have a standard query template
                 else if (value.has("query_tpl")) {
                     log.debug(" ... query template: \"{}\"", value.getString("query_tpl"));
@@ -418,7 +497,7 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
             }
         }
         // If no queries were generated, do general fallback
-	// if (result.isEmpty()) fallbackPostProcess(guri, result);
+        // if (result.isEmpty()) fallbackPostProcess(guri, result);
 
         return result;
     }
@@ -548,58 +627,6 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
             } else if (val.has("super")) return queryFromType(val.getString("super"), luri, dataset);
         } else log.warn("Got more than one type functions, will skip type '{}'", type);
         return null;
-    }
-
-    @Override
-    public String getMicrocompiler(String name, GlobalType type) {
-        throw new NotImplementedException("NIY");
-    }
-
-    @Override
-    public String getMicrocompiler(String name, GlobalType type, URI dataSource) {
-        throw new NotImplementedException("NIY");
-    }
-
-    @Override
-    public Map<String,String> getMicrocompilers(GlobalType type, URI dataSource) {
-        log.debug("Getting microcompilers for type <{}> from data source <{}>", type, dataSource);
-        Map<String,String> res = new HashMap<>();
-        Map<String,Set<String>> funcMap = new HashMap<>();
-        JSONObject jmap = documentProvider.getReducedView("compile", "jit", true, type.getId().toString());
-        JSONArray rows = jmap.getJSONArray("rows");
-        for (int i = 0; i < rows.length(); i++) {
-            JSONObject row = rows.getJSONObject(i).getJSONObject("value");
-            if (row.has(dataSource.toString())) {
-                JSONObject dsc = row.getJSONObject(dataSource.toString());
-                for (Iterator<?> it = dsc.keys(); it.hasNext();) {
-                    String funcName = (String) it.next();
-                    JSONObject conf = dsc.getJSONObject(funcName);
-                    if (conf.has("config")) {
-                        String confPointer = conf.getString("config");
-                        if (!funcMap.containsKey(confPointer)) funcMap
-                                .put(confPointer, new HashSet<String>());
-                        funcMap.get(confPointer).add(funcName);
-                    }
-                }
-            }
-        }
-        JSONObject jFuncs = documentProvider.getDocuments(funcMap.keySet().toArray(new String[0]));
-        rows = jFuncs.getJSONArray("rows");
-        for (int i = 0; i < rows.length(); i++) {
-            String ds = rows.getJSONObject(i).getString("id");
-            JSONObject jTyps = rows.getJSONObject(i).getJSONObject("doc").getJSONObject("mks:types");
-            if (jTyps.has(type.getId().toString())) {
-                JSONObject jTyp = jTyps.getJSONObject(type.getId().toString());
-                for (String funcName : funcMap.get(ds)) {
-                    if (jTyp.has(funcName) && !res.containsKey(funcName)) {
-                        log.debug("Getting microcompiler \"{}\" from configuration <{}>", funcName, ds);
-                        res.put(funcName, jTyp.getString(funcName));
-                    }
-
-                }
-            }
-        }
-        return res;
     }
 
 }

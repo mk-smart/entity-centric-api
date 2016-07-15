@@ -29,9 +29,13 @@ import org.mksmart.ecapi.api.id.GlobalURI;
 import org.mksmart.ecapi.api.id.IdGenerator;
 import org.mksmart.ecapi.web.format.JsonProvenanceDataSerializer;
 import org.mksmart.ecapi.web.util.UriRewriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Path("/entity")
 public class EntityResourceWithProvenance extends EntityResource {
+
+    private Logger log = LoggerFactory.getLogger(getClass());
 
     @GET
     @Path("{type: [\\w\\-\\._]+}/{id: .+}.prov")
@@ -48,7 +52,7 @@ public class EntityResourceWithProvenance extends EntityResource {
         ResponseBuilder rb;
         Set<String> dss = handleCredentials(headers, debug);
         if (dss != null) for (String ds : dss)
-            log.info("Dataset {}", ds);
+            log.trace("Dataset {}", ds);
         id = tyype + '/' + id; // not sure about keeping
         DebuggableEntityCompiler compiler = (DebuggableEntityCompiler) servletContext
                 .getAttribute(DebuggableEntityCompiler.class.getName());

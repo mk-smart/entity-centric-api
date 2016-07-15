@@ -9,12 +9,9 @@ import org.apache.commons.codec.EncoderException;
 import org.apache.commons.codec.net.URLCodec;
 import org.apache.http.auth.Credentials;
 import org.apache.wink.client.ClientAuthenticationException;
-import org.apache.wink.client.ClientConfig;
 import org.apache.wink.client.ClientResponse;
 import org.apache.wink.client.ClientWebException;
 import org.apache.wink.client.Resource;
-import org.apache.wink.client.RestClient;
-import org.apache.wink.client.handlers.BasicAuthSecurityHandler;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -30,47 +27,16 @@ import org.slf4j.LoggerFactory;
  * @author alessandro <alexdma@apache.org>
  * 
  */
-public class RemoteDocumentProvider implements DocumentProvider<JSONObject> {
-
-    /**
-     * TODO centralise {@link RestClient}
-     */
-    protected RestClient client;
-
-    protected URL serviceUrl;
-
-    protected String dbName;
+public class RemoteDocumentProvider extends RemoteDocumentHandlerBase implements DocumentProvider<JSONObject> {
 
     private Logger log = LoggerFactory.getLogger(getClass());
 
     public RemoteDocumentProvider(URL serviceUrl, String dbName) {
-        this(serviceUrl, dbName, null);
+        super(serviceUrl, dbName);
     }
 
     public RemoteDocumentProvider(URL serviceUrl, String dbName, Credentials credentials) {
-        this.serviceUrl = serviceUrl;
-        this.dbName = dbName;
-        ClientConfig config = new ClientConfig();
-        if (credentials != null) {
-            BasicAuthSecurityHandler auth = new BasicAuthSecurityHandler();
-            // Only set credentials if there is a username, no spaces around
-            if (credentials.getUserPrincipal() != null) {
-                String un = new String(credentials.getUserPrincipal().getName()).trim();
-                if (!un.isEmpty()) {
-                    auth.setUserName(un);
-                    if (credentials.getPassword() != null) {
-                        String pw = new String(credentials.getPassword()).trim();
-                        if (!pw.isEmpty()) {
-                            auth.setPassword(pw);
-                        }
-                    }
-
-                }
-            }
-            config.handlers(auth);
-        }
-        client = new RestClient(config);
-        if (!healthCheck()) throw new IllegalStateException("Compiler database health check failed.");
+        super(serviceUrl, dbName, credentials);
     }
 
     @Override
@@ -169,6 +135,7 @@ public class RemoteDocumentProvider implements DocumentProvider<JSONObject> {
         return getResource(u, keys);
     }
 
+    @Deprecated
     private boolean healthCheck() {
         String u = this.serviceUrl.toString();
         try {

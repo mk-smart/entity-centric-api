@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.servlet.ServletContext;
 
@@ -19,6 +20,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.UnrecognizedOptionException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.wink.client.ClientAuthenticationException;
 import org.eclipse.jetty.server.Connector;
@@ -44,6 +46,7 @@ import org.mksmart.ecapi.core.LaunchConfiguration;
 import org.mksmart.ecapi.couchdb.Config;
 import org.mksmart.ecapi.couchdb.CouchDbAssemblyProvider;
 import org.mksmart.ecapi.couchdb.CouchDbCatalogue;
+import org.mksmart.ecapi.couchdb.CouchDbSanityChecker;
 import org.mksmart.ecapi.couchdb.id.ProgrammaticGlobalURIGenerator;
 import org.mksmart.ecapi.couchdb.storage.CacheImpl;
 import org.mksmart.ecapi.couchdb.storage.FragmentPerQueryStore;
@@ -74,18 +77,12 @@ public class standalone {
 
         public Cli(String[] args) {
             this.args = args;
-            options.addOption("h", "help", false, "Show this help.");
             options.addOption("c", "config", true, "Config file path (required).");
+            options.addOption("f", "force", false,
+                "Attempt to start ECAPI even if the sanity check on its database fails"
+                        + " (WARNING: only use if you know what you are doing!).");
+            options.addOption("h", "help", false, "Show this help.");
             options.addOption("p", "port", true, "Set the port the server will listen to (defaults to 8080).");
-        }
-
-        /**
-         * Prints help.
-         */
-        private void help() {
-            String syntax = "java [java-opts] -jar [jarfile] -c [config-file]";
-            new HelpFormatter().printHelp(syntax, options);
-            System.exit(0);
         }
 
         /**
@@ -101,6 +98,13 @@ public class standalone {
                 if (args.length > 0) {
                     if ("init".equals(args[0])) {
                         log.error("Requested init task but this is not implemented yet.");
+                        System.exit(1);
+                    } else if ("repair".equals(args[0])) {
+                        log.error("Requested repair task but this is not implemented yet.");
+                        System.exit(1);
+                    } else {
+                        log.error("Invalid argument " + args[0]);
+                        help();
                         System.exit(1);
                     }
                 }
@@ -121,98 +125,87 @@ public class standalone {
                     log.error("No configuration file specified");
                     help();
                 }
+                if (cmd.hasOption('f')) {
+                    force = true;
+                }
                 if (cmd.hasOption('p')) {
                     port = Integer.parseInt(cmd.getOptionValue('p'));
-                    if (port < 0 && port > 65535) {
+                    if (port < 0 || port > 65535) {
                         log.error("Invalid port number " + port + ". Must be in the range [0,65535].");
                         System.exit(100);
                     }
                 }
+            } catch (UnrecognizedOptionException e) {
+                System.err.println(e.getMessage());
+                help();
             } catch (ParseException e) {
                 log.error("Failed to parse comand line properties", e);
                 help();
+
             }
+        }
+
+        /**
+         * Prints help.
+         */
+        private void help() {
+            String syntax = "java [java-opts] -jar [this-jarfile] -c [config-file] [TASK]";
+            String footer = "TASK can be one of init|repair or none at all (for normal ECAPI operation).";
+            new HelpFormatter().printHelp(syntax, "", options, footer);
+            System.exit(0);
         }
 
     }
 
     public static final String _DEFAULT_STORE_CLASSNAME = "org.mksmart.ecapi.impl.storage.NonStoringEntityStore";
 
+    private static boolean force = false;
+
     private static Logger log = LoggerFactory.getLogger(standalone.class);
+
+    private static final int MISCONFIGURED = -3;
 
     private static int port = 8080;
 
-    private static final int UNREACHABLE_COMPILER = -1;
-
     private static final int STORE_INITIALIZE = -2;
 
-    /**
-     * Initialises the main Web application on a given {@link WebAppContext} by registering shared resources
-     * therein.
-     * 
-     * @param wactx
-     *            the Web application context
-     */
+    private static final int UNREACHABLE_COMPILER = -1;
 
-    private static void initWebApp(WebAppContext wactx) {
-        // Instantiated context and configuration
-        ServletContext sctx = wactx.getServletContext();
-        Config couchConfig = Config.getInstance();
-        LaunchConfiguration lc = LaunchConfiguration.getInstance();
-        // Instantiate storage
-        initStore(wactx, couchConfig);
-        // Instantiate compiler
-        Catalogue ctlg = null;
+    public static void main(String[] args) throws Exception {
+        long before = System.currentTimeMillis();
+        new Cli(args).parse();
+        log.info("Initialising Jetty server on port {}", port);
+        Server server = new Server();
+        ServerConnector connector = new ServerConnector(server);
+        // Set some timeout options to make debugging easier.
+        connector.setIdleTimeout(1000 * 60 * 60);
+        connector.setSoLingerTime(-1);
+        connector.setPort(port);
+        server.setConnectors(new Connector[] {connector});
+
+        WebAppContext root = new WebAppContext();
+        root.setContextPath("/");
+        String webxmlLocation = standalone.class.getResource("/WEB-INF/web.xml").toString();
+        root.setDescriptor(webxmlLocation);
+        String resLocation = standalone.class.getResource("/webroot").toString();
+        root.setResourceBase(resLocation);
+        root.setParentLoaderPriority(true);
+        server.setHandler(root);
+
+        initWebApp(root);
+
         try {
-            DocumentProvider<JSONObject> dp = new RemoteDocumentProvider(new URL(
-                    (String) lc.get(Config.SERVICE_URL)), (String) lc.get(Config.DB),
-                    new UsernamePasswordCredentials((String) lc.get(Config.USERNAME), (String) lc
-                            .get(Config.PASSWORD)));
-            AssemblyProvider ep = new CouchDbAssemblyProvider(couchConfig.asProperties(), dp);
-            sctx.setAttribute(AssemblyProvider.class.getName(), ep);
-
-            IdGenerator<GlobalURI,?> idgen = new ProgrammaticGlobalURIGenerator(dp);
-            sctx.setAttribute(IdGenerator.class.getName(), idgen);
-            ctlg = new CouchDbCatalogue(dp);
-            sctx.setAttribute(Catalogue.class.getName(), ctlg);
-            Store<?,?> stor = (Store<?,?>) sctx.getAttribute(Store.class.getName());
-            Cache cache = null;
-            if (stor instanceof FragmentPerQueryStore) cache = new CacheImpl(dp, (FragmentPerQueryStore) stor);
-            else log.warn("Entity store implementation '{}' does not support lookahead of cache hits.", stor
-                    .getClass().getName());
-            if (cache == null) log.warn("Could not initialise cache. All queries will be performed fresh.");
-            sctx.setAttribute(DebuggableEntityCompiler.class.getName(), new EntityCompilerImpl(ep, ctlg,
-                    cache, stor));
-        } catch (IllegalStateException | ClientAuthenticationException ex) {
-            log.error("Illegal state caught for compiler database.");
-            log.error(" ... is CouchDb running?");
-            log.error("Exiting now");
-            System.exit(UNREACHABLE_COMPILER);
-        } catch (MalformedURLException e) {
-            log.error("Illegal state caught for compiler database.");
-            log.error(" ... parameter {} does not seem to be a well-formed URL.", Config.SERVICE_URL);
-            log.error("Exiting now");
-            System.exit(UNREACHABLE_COMPILER);
+            server.start();
+            // while (System.in.available() == 0) {
+            // Thread.sleep(5000);
+            // server.stop();
+            server.join();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(100);
         }
 
-        // Instantiate access components
-        Properties pro = couchConfig.asProperties();
-        sctx.setAttribute(VisibilityChecker.class.getName(), new VisibilityChecker(ctlg));
-        ApiKeyDriver driver = selectDriver(pro);
-        log.debug("Instantiated permission checker of type {}", driver.getClass());
-        sctx.setAttribute(ApiKeyDriver.class.getName(), driver);
-        sctx.setAttribute(SPARQLWriter.class.getName(),
-            new SPARQLWriter(pro.getProperty("org.mksmart.web.util.sparql.writer")));
-
-    }
-
-    private static ApiKeyDriver selectDriver(Properties configuration) {
-        // Priority to ISAPI key driver
-        if (configuration.containsKey(KEYMGMT_ISAPI_HOST)) return new IsapiKeyDriver(configuration);
-        if ((configuration.containsKey(KEYMGMT_MYSQL_HOST) || configuration.containsKey(KEYMGMT_MYSQL_DB) || configuration
-                .containsKey(KEYMGMT_MYSQL_USER)) || configuration.containsKey(KEYMGMT_KEY_OPENDATA)) return new SsimpleAuthKeyDriver(
-                configuration);
-        else return new PermissiveKeyDriver();
+        log.info("Startup completed in {} ms", System.currentTimeMillis() - before);
     }
 
     @SuppressWarnings("rawtypes")
@@ -222,7 +215,7 @@ public class standalone {
         String scname = config.asProperties().getProperty(prop, _DEFAULT_STORE_CLASSNAME);
         Class<? extends Store> storeClazz;
         if (config.getStorageDbName() == null || config.getStorageDbName().isEmpty()) {
-            log.warn("Storage DB name not set. ECAPI will be run stateless.");
+            log.warn("Storage DB name not set. ECAPI will run in stateless mode.");
             storeClazz = NonStoringEntityStore.class;
         } else try {
             storeClazz = Class.forName(scname).asSubclass(Store.class);
@@ -271,41 +264,100 @@ public class standalone {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        long before = System.currentTimeMillis();
-        new Cli(args).parse();
-        log.info("Initialising Jetty server on port {}", port);
-        Server server = new Server();
-        ServerConnector connector = new ServerConnector(server);
-        // Set some timeout options to make debugging easier.
-        connector.setIdleTimeout(1000 * 60 * 60);
-        connector.setSoLingerTime(-1);
-        connector.setPort(port);
-        server.setConnectors(new Connector[] {connector});
+    /**
+     * Initialises the main Web application on a given {@link WebAppContext} by registering shared resources
+     * therein.
+     * 
+     * @param wactx
+     *            the Web application context
+     */
 
-        WebAppContext root = new WebAppContext();
-        root.setContextPath("/");
-        String webxmlLocation = standalone.class.getResource("/WEB-INF/web.xml").toString();
-        root.setDescriptor(webxmlLocation);
-        String resLocation = standalone.class.getResource("/webroot").toString();
-        root.setResourceBase(resLocation);
-        root.setParentLoaderPriority(true);
-        server.setHandler(root);
-
-        initWebApp(root);
-
+    private static void initWebApp(WebAppContext wactx) {
+        // Instantiated context and configuration
+        ServletContext sctx = wactx.getServletContext();
+        Config couchConfig = Config.getInstance();
+        LaunchConfiguration lc = LaunchConfiguration.getInstance();
+        // Instantiate storage
+        initStore(wactx, couchConfig);
+        // Instantiate compiler
+        Catalogue ctlg = null;
         try {
-            server.start();
-            // while (System.in.available() == 0) {
-            // Thread.sleep(5000);
-            // server.stop();
-            server.join();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(100);
+            DocumentProvider<JSONObject> dp = new RemoteDocumentProvider(new URL(
+                    (String) lc.get(Config.SERVICE_URL)), (String) lc.get(Config.DB),
+                    new UsernamePasswordCredentials((String) lc.get(Config.USERNAME), (String) lc
+                            .get(Config.PASSWORD)));
+            AssemblyProvider<String> ep = new CouchDbAssemblyProvider(couchConfig.asProperties(), dp);
+            sctx.setAttribute(AssemblyProvider.class.getName(), ep);
+
+            log.debug("Performing configuration database for sanity check...");
+            Set<?> failures = new CouchDbSanityChecker(false).getFailingItems(ep);
+            if (failures.isEmpty()) log.info("Configuration environment appears to be sane.");
+            else {
+                log.warn("The following documents of the configuration database are in an unexpected state:");
+                for (Object o : failures)
+                    log.warn(" * {}", o);
+                log.warn("Issues detected in configuration environment! See previous errors and warnings for details.");
+                if (force) log
+                        .warn("force option was set, so attempting startup anyway (at your own risk!)...");
+                else {
+                    log.error("It seems the structure of your configuration database has been tampered with.");
+                    log.error("By default ECAPI will not repair it. If you wish to attempt a repair, make sure the database user"
+                              + " you set in the configuration file has write permissions and relaunch the ECAPI in the following way:");
+                    log.error("");
+                    log.error("    $ java [java-opts] -jar [this-jarfile] -c [config-file] repair");
+                    log.error("");
+                    log.error("Or, to (re)build the database from scratch (and erase all your dataset configurations!):");
+                    log.error("");
+                    log.error("    $ java [java-opts] -jar [this-jarfile] -c [config-file] init");
+                    log.error("");
+                    log.error("Alternatively, you can use the --force option to start ECAPI anyway, but expect things to go funny!");
+                    log.error("Exiting now");
+                    System.exit(MISCONFIGURED);
+                }
+            }
+
+            IdGenerator<GlobalURI,?> idgen = new ProgrammaticGlobalURIGenerator(dp);
+            sctx.setAttribute(IdGenerator.class.getName(), idgen);
+            ctlg = new CouchDbCatalogue(dp);
+            sctx.setAttribute(Catalogue.class.getName(), ctlg);
+            Store<?,?> stor = (Store<?,?>) sctx.getAttribute(Store.class.getName());
+            Cache cache = null;
+            if (stor instanceof FragmentPerQueryStore) cache = new CacheImpl(dp, (FragmentPerQueryStore) stor);
+            else log.warn("Entity store implementation '{}' does not support lookahead of cache hits.", stor
+                    .getClass().getName());
+            if (cache == null) log.warn("Could not initialise cache. All queries will be performed fresh.");
+            sctx.setAttribute(DebuggableEntityCompiler.class.getName(), new EntityCompilerImpl(ep, ctlg,
+                    cache, stor));
+        } catch (IllegalStateException | ClientAuthenticationException ex) {
+            log.error("Illegal state caught for compiler database.");
+            log.error(" ... is CouchDb running and healthy?");
+            log.error("Exiting now");
+            System.exit(UNREACHABLE_COMPILER);
+        } catch (MalformedURLException e) {
+            log.error("Illegal state caught for compiler database.");
+            log.error(" ... parameter {} does not seem to be a well-formed URL.", Config.SERVICE_URL);
+            log.error("Exiting now");
+            System.exit(UNREACHABLE_COMPILER);
         }
 
-        log.info("Startup completed in {} ms", System.currentTimeMillis() - before);
+        // Instantiate access components
+        Properties pro = couchConfig.asProperties();
+        sctx.setAttribute(VisibilityChecker.class.getName(), new VisibilityChecker(ctlg));
+        ApiKeyDriver driver = selectDriver(pro);
+        log.debug("Instantiated permission checker of type {}", driver.getClass());
+        sctx.setAttribute(ApiKeyDriver.class.getName(), driver);
+        sctx.setAttribute(SPARQLWriter.class.getName(),
+            new SPARQLWriter(pro.getProperty("org.mksmart.web.util.sparql.writer")));
+
+    }
+
+    private static ApiKeyDriver selectDriver(Properties configuration) {
+        // Priority to ISAPI key driver
+        if (configuration.containsKey(KEYMGMT_ISAPI_HOST)) return new IsapiKeyDriver(configuration);
+        if ((configuration.containsKey(KEYMGMT_MYSQL_HOST) || configuration.containsKey(KEYMGMT_MYSQL_DB) || configuration
+                .containsKey(KEYMGMT_MYSQL_USER)) || configuration.containsKey(KEYMGMT_KEY_OPENDATA)) return new SsimpleAuthKeyDriver(
+                configuration);
+        else return new PermissiveKeyDriver();
     }
 
 }

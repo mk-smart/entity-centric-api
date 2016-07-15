@@ -3,9 +3,8 @@
    "language": "javascript",
    "views": {
        "jit": {
-           "description": "For each type and data source configuration, computes the data sources which should be used for each microcompiler function needed by the JIT engine, based on inheritance machanism",
-           "map": "function(s){switch(s.type){case\"provider-spec\":for(var e in s[\"mks:types\"])emit(e,{source:s._id,specs:s[\"mks:types\"][e]})}};",
-           "reduce": "function(e,r,s){for(var n={},c={},o=0;o<e.length;o++)c[e[o][1]]=o;if(s)return n;for(var t=function(e,s){var n=\"experimental:inherit\",o=\"experimental:datasource\";for(var a in e.specs)e.specs.hasOwnProperty(a)&&a!=n&&(s[a]||(s[a]={config:e.source}));e.specs.hasOwnProperty(n)&&e.specs[n][o]&&t(r[c[e.specs[n][o]]],s)},o=0;o<r.length;o++)n[r[o].source]={},t(r[o],n[r[o].source]);return n};"
+           "map": "function(s){switch(s.type){case'provider-spec':for(var e in s['mks:types'])emit(e,{source:s._id,specs:s['mks:types'][e]})}};",
+           "reduce": "function(keys,values,rereduce){if(rereduce){s={};for(i in values)for(j in values[i])s[j]=values[i][j];return s}for(var s={},o={},c=0;c<keys.length;c++)o[keys[c][1]]=c;for(var t=function(r,n){var s=\"experimental:inherit\",i=\"experimental:datasource\";for(var c in r.specs)r.specs.hasOwnProperty(c)&&c!=s&&(n[c]||(n[c]={config:r.source}));r.specs.hasOwnProperty(s)&&r.specs[s][i]&&t(e[o[r.specs[s][i]]],n)},c=0;c<values.length;c++)s[values[c].source]={},t(values[c],s[values[c].source]);return s};"
        },
        "typemaps": {
            "map": "function(doc){ switch(doc.type){ case 'provider-spec': for(var ty in doc['mks:types']) emit(ty, { dataset: doc._id, debug:doc.debug, globalise: doc['mks:types'][ty].globalise, localise: doc['mks:types'][ty].localise }); break; case 'global-type-spec': emit(doc._id, { super:doc['mks:super'], globalise: doc.globalise, localise: doc.localise }); break; } }"
@@ -14,10 +13,11 @@
            "map": "function(doc){ switch(doc.type){ case 'provider-spec': for(var ty in doc['mks:primitives']) emit(ty, { dataset: doc._id, debug:doc.debug, query: doc['mks:primitives'][ty].query }); break; case 'global-type-spec': if(doc.typecat=='primitive') emit(doc._id, { query: doc.query }); break; } }"
        },
        "typedataset": {
-           "map": "function(doc){if(doc.type=='provider-spec'){for(var ty in doc['mks:types']){var it=doc['mks:types'][ty];var va={dataset:doc._id,debug:doc.debug,sep:doc['http://rdfs.org/ns/void#sparqlEndpoint'],globalise:it.globalise,localise:it.localise,query_tpl:it.query_tpl,query_text:it.query_text,examples:it.example_instances,fetch_query:it.fetch_query};emit(ty,va)}}}"
+           "map": "function(doc){if(doc.type=='provider-spec'){for(var ty in doc['mks:types']){var it=doc['mks:types'][ty];var va={dataset:doc._id,debug:doc.debug,sep:doc['http://rdfs.org/ns/void#sparqlEndpoint'],globalise:it.globalise,localise:it.localise,query_tpl:it.query_tpl,query_text:it.query_text,fetch_query:it.fetch_query,examples:it.example_instances,cache_lifetime:doc['mks:cache-lifetime']};emit(ty,va)}}}"
        },
        "typefunctions": {
            "map": "function(doc){if(doc.type=='global-type-spec') emit(doc._id,{super:doc['mks:super'], localise:doc.localise, query_tpl:doc.query_tpl, query_text:doc.query_text})}"
+           ,"description": "just for tests, delete me!"
        }
    }
 }

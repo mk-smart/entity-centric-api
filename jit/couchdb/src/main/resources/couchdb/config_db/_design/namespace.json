@@ -1,33 +1,5 @@
 {
    "_id": "_design/namespace",
    "mks:prefixes": {
-       "http://www.w3.org/2003/01/geo/wgs84_pos#": "geo",
-       "http://data.ordnancesurvey.co.uk/ontology/spatialrelations/": "ons",
-       "http://ontology.mksmart.org/social/": "social",
-       "http://rdfs.org/sioc/ns#": "social",
-       "http://landregistry.data.gov.uk/def/hpi/": "lrhpi",
-       "http://datahub.mksmart.org/ns/mki/": "mki",
-       "http://datahub.mksmart.org/tmpns/stats/year#": "year",
-       "http://datahub.mksmart.org/tmpns/imd/": "imd",
-       "http://datahub.mksmart.org/tmpns/demo/": "demographics",
-       "http://ns.inria.fr/nicetag/2010/09/09/": "tag",
-       "http://purl.org/dc/elements/1.1/": "dc",
-       "http://data.mksmart.org/tmpns/mki/ctband/": "ctband"
-   },
-   "http://data.mksmart.org/twitter/tweet/(\\w*)": "tweet/$1",
-   "http://data.mksmart.org/twitter/place/(\\w*)_england": "place/$1",
-   "http://data.ordnancesurvey.co.uk/id/700000(\\w*)": "ward/700000$1",
-   "http://data.ordnancesurvey.co.uk/id/country/(\\w*)": "place/$1",
-   "http://data.ordnancesurvey.co.uk/id/postcodesector/(\\w*)": "sector/$1",
-   "http://data.ordnancesurvey.co.uk/id/postcodedistrict/(\\w*)": "district/$1",
-   "http://data.ordnancesurvey.co.uk/id/postcodearea/(\\w*)": "area/$1",
-   "http://data.ordnancesurvey.co.uk/id/postcodeunit/(\\w*)": "postcode/$1",
-   "http://landregistry.data.gov.uk/id/region/([\\w\\-]+)": "place/$1",
-   "http://data.mksmart.org/flickr/photo/([0-9]*)": "image/$1",
-   "http://data.mksmart.org/flickr/place/(\\w*)": "function rewrite(word){ return 'place/' + word.toLowerCase().replace(/ /g, '_'); }",
-   "http://statistics.data.gov.uk/id/statistical-geography/([a-zA-Z]+)([0-9]+)": "function rewrite(word, digits){ return 'statistic/' + word + digits}",
-   "http://datahub.mksmart.org/tmpns/place/(\\w*)": "place/$1",
-   "http://data.mksmart.org/tmpns/ward/(\\w*)": "function rewrite(word){var geocodes = { '00MGNN':'Loughton Park Ward', '00MGNW':'Stony Stratford Ward', '00MGNZ':'Wolverton Ward', '00MGNS':'Olney Ward', '00MGNE':'Danesborough Ward', '00MGNP':'Middleton Ward', '00MGNK':'Hanslope Park Ward', '00MGNT':'Sherington Ward', '00MGNY':'Whaddon Ward', '00MGNH':'Emerson Valley Ward', '00MGNC':'Bradwell Ward', '00MGNU':'Stantonbury Ward', '00MGNG':'Eaton Manor Ward', '00MGNF':'Denbigh Ward', '00MGNB':'Bletchley and Fenny Stratford Ward', '00MGPA':'Woughton Ward', '00MGND':'Campbell Park Ward', '00MGNX':'Walton Park Ward', '00MGNM':'Linford South Ward', '00MGNL':'Linford North Ward', '00MGNR':'Newport Pagnell South Ward', '00MGNQ':'Newport Pagnell North Ward', '00MGNJ':'Furzton Ward' };  if (geocodes[word]) return 'ward/'+ geocodes[word].toLowerCase().replace(/ /g,'_').replace(/_ward/g,''); else return '';}",
-   "http://data.mksmart.org/tmpns/lsoa/(\\w+)": "lsoa/$1",
-   "http://datahub.mksmart.org/ns/dataset/([\\w\\-]*)": "dataset/$1"
+   }
 }

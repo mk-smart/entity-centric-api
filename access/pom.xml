@@ -19,7 +19,7 @@
 
   <repositories>
      <repository>
-       <id>reasoners-hermit-embedded</id>
+       <id>auth-embedded</id>
        <url>file://localhost/${project.basedir}/src/main/resources/maven/repo</url>
        <releases>
          <updatePolicy>always</updatePolicy>

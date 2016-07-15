@@ -46,7 +46,9 @@ public class AuthServerPolicyChecker {
         client = new RestClient(clientConf);
         LaunchConfiguration config = LaunchConfiguration.getInstance();
         if (!config.has(Config.KEYMGMT_AUTHSVR_HOST)) {
-            log.warn("No authorisation server URI given. Treating all datasets as open!");
+            log.warn("No authorisation server URI given.");
+            log.warn("Unless another permission checker is instantiated, all datasets will be treated as open!");
+            log.warn("Please check subsequent log messages for other permission checkers.");
         } else {
             authSvrLoc = URI.create((String) config.get(Config.KEYMGMT_AUTHSVR_HOST));
             log.info("Setting authorisation server as <{}>", authSvrLoc);

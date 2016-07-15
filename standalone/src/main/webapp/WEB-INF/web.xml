@@ -30,10 +30,12 @@
 		<filter-name>basicAuthenticationFilter</filter-name>
 		<url-pattern>/jit/*</url-pattern>
 	</filter-mapping>
-<!--	
+	
+	<!-- 
 	<login-config>
-  <auth-method>BASIC</auth-method>     
-  <realm-name>Test Realm</realm-name>  
-</login-config>
--->
+		<auth-method>BASIC</auth-method>
+		<realm-name>Test Realm</realm-name> 
+	</login-config> 
+	-->
+	
 </web-app>

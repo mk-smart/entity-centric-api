@@ -120,4 +120,9 @@ public class CompilerResource extends BaseResource {
         return rb.build();
     }
 
+    @Override
+    public ServletContext getServletContext() {
+        return this.servletContext;
+    }
+
 }
