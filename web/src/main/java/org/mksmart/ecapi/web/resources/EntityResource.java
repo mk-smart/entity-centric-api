@@ -1,13 +1,10 @@
 package org.mksmart.ecapi.web.resources;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.StringTokenizer;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.DefaultValue;
@@ -26,13 +23,9 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import org.apache.commons.codec.binary.Base64;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mksmart.ecapi.access.ApiKeyDriver;
-import org.mksmart.ecapi.access.NotCheckingRightsException;
-import org.mksmart.ecapi.access.PermissiveKeyDriver;
 import org.mksmart.ecapi.api.AssemblyProvider;
 import org.mksmart.ecapi.api.DebuggableEntityCompiler;
 import org.mksmart.ecapi.api.Entity;
@@ -123,6 +116,11 @@ public class EntityResource extends BaseResource {
         return rb.build();
     }
 
+    @Override
+    public ServletContext getServletContext() {
+        return this.servletContext;
+    }
+
     /**
      * FIXME too much computation going on here
      *
@@ -177,8 +175,7 @@ public class EntityResource extends BaseResource {
 
     @GET
     @Produces(value = {MediaType.APPLICATION_JSON})
-    public Response getSignOfLife(@DefaultValue("false") @QueryParam("lookup") boolean lookup,
-                                  @Context HttpHeaders headers) {
+    public Response getSignOfLife(@Context HttpHeaders headers) {
         ResponseBuilder rb;
         JSONObject sol = new JSONObject();
         // TODO refer to the compiler instead
@@ -247,7 +244,6 @@ public class EntityResource extends BaseResource {
                                      @DefaultValue("false") @QueryParam("debug") boolean debug,
                                      @Context HttpHeaders headers,
                                      @Context UriInfo uriInfo) {
-        log.info("Media type {}", headers.getAcceptableMediaTypes());
         ResponseBuilder rb;
         Set<String> dss = handleCredentials(headers, debug);
         if (dss != null) for (String ds : dss)
@@ -295,61 +291,6 @@ public class EntityResource extends BaseResource {
         rb = Response.ok(widget.toString());
         handleCors(rb);
         return rb.build();
-    }
-
-    // TODO: Add getting key through parameter
-    protected Set<String> handleCredentials(HttpHeaders headers, boolean with_debug) {
-        Set<String> apiKeys = new HashSet<>();
-        String authHeader;
-        List<String> authHeaderList = headers.getRequestHeader("Authorization");
-        if (authHeaderList != null) {
-            Iterator<String> authit = authHeaderList.iterator();
-            if (authit.hasNext()) {
-                authHeader = authit.next();
-                log.trace("Got authorization header {}", authHeader);
-            } else {
-                log.trace("No authorization header found");
-                return null;
-            }
-            StringTokenizer st = new StringTokenizer(authHeader);
-            if (st.hasMoreTokens()) {
-                String basic = st.nextToken();
-                if (basic.equalsIgnoreCase("Basic")) {
-                    try {
-                        String credentials = new String(Base64.decodeBase64(st.nextToken()), "UTF-8");
-                        int p = credentials.indexOf(":");
-                        if (p != -1) {
-                            String _apikey = credentials.substring(0, p).trim();
-                            if (!_apikey.isEmpty()) {
-                                log.trace("Adding API key {}", _apikey);
-                                apiKeys.add(_apikey);
-                            }
-                        }
-                    } catch (UnsupportedEncodingException e) {
-                        throw new Error("Couldn't retrieve authentication", e);
-                    }
-                }
-            }
-        }
-        // MDA: remove this - the APIKeyDriver should return the open data sets
-        // from authorisation
-        /*
-         * if (apiKeys == null || apiKeys.isEmpty() || (apiKeys.size() == 1 &&
-         * "null".equals(apiKeys.iterator().next()))) {
-         * log.info("No API key supplied by client. Will retrieve open data only."); return null; // not an
-         * empty set! }
-         */
-        ApiKeyDriver keyDrv = (ApiKeyDriver) servletContext.getAttribute(ApiKeyDriver.class.getName());
-        // if (!keyDrv.exists(apiKeys.toArray(new String[0]))) throw new RuntimeException(
-        // "Unmatching API keys found. Deal with it.");
-        try {
-            if (apiKeys == null || apiKeys.isEmpty()) return keyDrv.getDataSources();
-            else return keyDrv.getDataSources(apiKeys.toArray(new String[0]));
-        } catch (NotCheckingRightsException e) {
-            if (keyDrv instanceof PermissiveKeyDriver) return null;
-            else throw new RuntimeException(
-                    "Non-permissive authorisation checker refused to check for access rights. This should not happen.");
-        }
     }
 
     protected void init(UriInfo uriInfo, HttpHeaders headers) {

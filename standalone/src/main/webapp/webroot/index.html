@@ -1,36 +1,49 @@
+<!--
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
+	
+	    http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
+-->
 <html lang="en">
 
 <head>
-<title>MK:Smart Entity-centric API</title>
+<title>Entity-Centric API</title>
+<link href='css/style.css' media='screen' rel='stylesheet'
+	type='text/css' />
 </head>
 
 <body>
-	<p>
-		This is the <a href="http://mksmart.org">MK:Smart</a> entity-centric
-		API
-	</p>
-	<ul>
-		<li><a href="jit/entity">compiler root</a> URI scheme:
-			<ul>
-				<li><samp>{host}/jit/entity/{globaltype}/{identifier
-						scope}:{identifier type}/{identifier value}</samp> (for managed <em>asserted</em>
-					entity types), example <a
-					href=jit/entity/geo-unit/uk:postcode/MK77NY>jit/entity/geo-unit/uk:postcode/MK77NY</a></li>
-				<li><samp>{host}/jit/entity/has/{identifier
-						scope}:{identifier type}/{identifier value}</samp> (for managed <em>primitive</em>
-					entity types), example <a href=jit/entity/has/uk:postcode/MK77>jit/entity/has/uk:postcode/MK77</a></li>
-				<li><samp>{host}/jit/entity/thing/www:uri/{full URI
-						without scheme part}</samp> (for unmanaged entity types), example <a
-					href=jit/entity/thing/www:uri/data.open.ac.uk/qualification/w01>jit/entity/thing/www:uri/data.open.ac.uk/qualification/w01</a></li>
-			</ul></li>
-		<li><a href="jit/compiler">entity resolution root</a>
-			(deprecated). URI scheme:
-			<ul>
-				<li><samp>{host}/jit/compiler?id={local entity URI}</samp>,
-					example <a
-					href=jit/compiler?id=http://data.ordnancesurvey.co.uk/id/postcodedistrict/MK6>jit/compiler?id=http://data.ordnancesurvey.co.uk/id/postcodedistrict/MK6</a></li>
-			</ul></li>
-	</ul>
+	<nav>
+		<ul>
+			<li><a href="">Home</a></li> |
+			<li><a href="jit/">API</a></li> |
+			<li><a href="doc/">Documentation</a></li>
+		</ul>
+	</nav>
+	<div>
+		<p>This is a general-purpose API for hosting virtually-integrated
+			linked data.</p>
+		For further resources go to:
+		<ul>
+			<li><a href="jit/">/jit</a> (the API root)</li>
+			<li><a href="doc/">/doc</a> (interactive API documentation)</li>
+		</ul>
+	</div>
+	<hr />
+	<footer>
+		<ul>
+			<li><a href="http://www.apache.org/licenses/LICENSE-2.0">License</a></li>
+			<li><a href="http://github.com/mk-smart/entity-centric-api">Source
+					code</a></li>
+		</ul>
+	</footer>
 </body>
 
 </html>

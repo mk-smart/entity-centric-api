@@ -160,9 +160,9 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
             filtered.addAll(datasetNames);
             filtered.retainAll(checkUs);
         }
-        log.debug("Filtered datasets : {}", datasetNames);
-        log.info("{} datasets filtered in out of {} requested.",
-            datasetNames == null ? "[undefined, all open data]" : filtered.size(), datasetNames.size());
+        log.debug("{} datasets filtered in out of {} requested.",
+            datasetNames == null ? "[undefined, all open data]" : filtered.size(),
+            datasetNames == null ? "[none specifically]" : datasetNames.size());
         return filtered;
     }
 

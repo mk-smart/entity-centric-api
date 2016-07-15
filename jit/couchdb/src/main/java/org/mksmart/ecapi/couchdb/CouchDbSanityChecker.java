@@ -186,8 +186,8 @@ public class CouchDbSanityChecker implements SanityChecker<String> {
                     "Expected design document " + resUrl + " is not valid JSON! This should not happen"
                             + " and it could be an indication that the executable is corrupted.", jex);
         }
-        if (ddocLocal != null) log.debug(" ... local resource is correct JSON and contains {} attributes",
-            ddocLocal.keySet().size());
+        if (ddocLocal != null) log.debug(
+            " ... local resource is well-formed JSON and contains {} attributes", ddocLocal.keySet().size());
         String remoteLocation = "_design/" + name.replaceAll(".json$", "");
         log.debug(" ... now checking for remote design document in {}", remoteLocation);
         JSONObject ddocRemote;
@@ -199,8 +199,9 @@ public class CouchDbSanityChecker implements SanityChecker<String> {
             if (severe) reactSeverely(failing);
             return;
         }
-        if (ddocRemote != null) log.debug(" ... remote resource is correct JSON and contains {} attributes",
-            ddocRemote.keySet().size());
+        if (ddocRemote != null) log
+                .debug(" ... remote resource is well-formed JSON and contains {} attributes", ddocRemote
+                        .keySet().size());
         // Now check the objects one by one...
         JSONCompareResult res = JSONCompare.compareJSON(ddocLocal, ddocRemote, this.comparator);
         log.trace(" ... Checking if values are equal... {}", res.passed());
@@ -209,15 +210,16 @@ public class CouchDbSanityChecker implements SanityChecker<String> {
         if (repair) {
             log.info("Attempting repair...");
             throw new NotImplementedException("NIY");
-        }
-        for (FieldComparisonFailure fail : res.getFieldFailures()) {
-            log.warn(" * Field {} : values do not match.", fail.getField());
-            log.trace(" ** expected:\r\n{}", fail.getExpected());
-            log.trace(" ** got:\r\n{}", fail.getActual());
-        }
-        if (res.failed()) {
-            failing.add(remoteLocation);
-            if (severe) reactSeverely(failing);
+        } else {
+            for (FieldComparisonFailure fail : res.getFieldFailures()) {
+                log.warn(" * Field {} : values do not match.", fail.getField());
+                log.trace(" ** expected:\r\n{}", fail.getExpected());
+                log.trace(" ** got:\r\n{}", fail.getActual());
+            }
+            if (res.failed()) {
+                failing.add(remoteLocation);
+                if (severe) reactSeverely(failing);
+            } else log.debug("<== OK. Expected fields match, document at {} is valid.", remoteLocation);
         }
     }
 

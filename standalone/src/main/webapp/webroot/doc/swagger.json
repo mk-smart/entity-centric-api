@@ -1,0 +1,302 @@
+{
+	"swagger" : "2.0",
+	"info" : {
+		"description" : "A simple Web API for registering and accessing extracted data for the data platform",
+		"title" : "Entity-Centric data API",
+		"version" : "0.0.1"
+	},
+	"host" : "data.afel-project.eu",
+	"basePath" : "/api",
+	"schemes" : ["http"],
+	"tags" : [{
+			"name" : "dataset",
+			"description" : "Operations on datasets"
+		}, {
+			"name" : "entity",
+			"description" : "Access to aggregated entity data"
+		}
+	],
+	"paths" : {
+		"/dataset" : {
+			"get" : {
+				"tags" : ["dataset"],
+				"summary" : "Lists all registered datasets.",
+				"produces" : ["application/json"],
+				"responses" : {
+					"default" : {
+						"description" : "A list of dataset UUIDs"
+					}
+				}
+			},
+			"post" : {
+				"tags" : ["dataset"],
+				"summary" : "Creates a new dataset with the supplied mnenomic name and generates a UUID for it. If the name is already in use, it will NOT be created.",
+				"operationId" : "createDatasetWithName",
+				"consumes" : ["application/x-www-form-urlencoded"],
+				"produces" : ["application/json"],
+				"parameters" : [{
+						"name" : "name",
+						"in" : "formData",
+						"description" : "desired mnemonic name for the new dataset",
+						"required" : true,
+						"type" : "string"
+					}
+				],
+				"responses" : {
+					"201" : {
+						"description" : "Dataset has been created."
+					},
+					"400" : {
+						"description" : "Invalid API key supplied"
+					},
+					"403" : {
+						"description" : "Dataset creation is not authorised for this API key"
+					},
+					"409" : {
+						"description" : "A dataset with the supplied name already exists"
+					}
+				},
+				"security" : [{
+						"api_key" : []
+					}
+				]
+			}
+		},
+		"/dataset/{datasetUuid}" : {
+			"get" : {
+				"tags" : ["dataset"],
+				"summary" : "Returns the metadata of this datasets, including hooks to the data themselves.",
+				"produces" : ["application/json"],
+				"parameters" : [{
+						"name" : "datasetUuid",
+						"in" : "path",
+						"description" : "Unique identifier of the dataset.",
+						"required" : true,
+						"type" : "string"
+					}
+				],
+				"responses" : {
+					"200" : {
+						"description" : "The dataset metadata"
+					}
+				}
+			},
+			"post" : {
+				"tags" : ["dataset"],
+				"summary" : "Adds RDF data to a dataset.",
+				"operationId" : "addDataToDataset",
+				"consumes" : ["application/x-www-form-urlencoded"],
+				"parameters" : [{
+						"name" : "datasetUuid",
+						"in" : "path",
+						"description" : "Unique identifier of the dataset.",
+						"required" : true,
+						"type" : "string"
+					}, {
+						"name" : "rdf",
+						"description" : "The raw RDF data",
+						"in" : "formData",
+						"required" : true,
+						"type" : "string"
+					}, {
+						"name" : "replace",
+						"description" : "Where the dataset should be replaced and its old data cleared",
+						"in" : "formData",
+						"required" : false,
+						"default" : false,
+						"type" : "boolean"
+					}, {
+						"name" : "format",
+						"description" : "The format of the RDF data (MIME type)",
+						"in" : "formData",
+						"required" : false,
+						"default" : "text/rdf+nt",
+						"type" : "string"
+					}
+				],
+				"responses" : {
+					"201" : {
+						"description" : "Dataset has been created."
+					},
+					"400" : {
+						"description" : "Invalid API key supplied"
+					},
+					"403" : {
+						"description" : "Dataset creation is not authorised for this API key"
+					},
+					"409" : {
+						"description" : "Dataset already exists"
+					}
+				},
+				"security" : [{
+						"api_key" : []
+					}
+				]
+			},
+			"put" : {
+				"tags" : ["dataset"],
+				"summary" : "Creates a new dataset with the supplied UUID.",
+				"parameters" : [{
+						"name" : "datasetUuid",
+						"in" : "path",
+						"description" : "Unique identifier of the dataset.",
+						"required" : true,
+						"type" : "string"
+					}
+				],
+				"responses" : {
+					"201" : {
+						"description" : "Dataset has been created."
+					},
+					"400" : {
+						"description" : "Invalid API key supplied"
+					},
+					"403" : {
+						"description" : "Dataset creation is not authorised for this API key"
+					},
+					"409" : {
+						"description" : "Dataset already exists"
+					}
+				},
+				"security" : [{
+						"api_key" : []
+					}
+				]
+			}
+		},
+		"/dataset/{datasetUuid}/grant" : {
+			"post" : {
+				"tags" : ["dataset"],
+				"summary" : "Grants an access right to a dataset.",
+				"produces" : ["application/json"],
+				"parameters" : [{
+						"name" : "datasetUuid",
+						"in" : "path",
+						"description" : "Unique identifier of the dataset.",
+						"required" : true,
+						"type" : "string"
+					}, {
+						"name" : "grantee",
+						"in" : "query",
+						"description" : "The API key that is being granted the right.",
+						"required" : true,
+						"type" : "string"
+					}, {
+						"name" : "right",
+						"in" : "query",
+						"description" : "The right to be granted.",
+						"required" : true,
+						"type" : "string",
+						"enum" : ["read", "write", "grant"]
+					}
+				],
+				"responses" : {
+					"200" : {
+						"description" : "Grant operation was successful, regardless of whether it did cause a change in the rights."
+					},
+					"400" : {
+						"description" : "Invalid API key supplied"
+					},
+					"403" : {
+						"description" : "Dataset creation is not authorised for this API key"
+					}
+				},
+				"security" : [{
+						"api_key" : []
+					}
+				]
+			}
+		},
+		"/dataset/{datasetUuid}/revoke" : {
+			"post" : {
+				"tags" : ["dataset"],
+				"summary" : "Revokes an access right from an API key on a dataset.",
+				"produces" : ["application/json"],
+				"parameters" : [{
+						"name" : "datasetUuid",
+						"in" : "path",
+						"description" : "Unique identifier of the dataset.",
+						"required" : true,
+						"type" : "string"
+					}, {
+						"name" : "grantee",
+						"in" : "query",
+						"description" : "The API key that is being revoked the right.",
+						"required" : true,
+						"type" : "string"
+					}, {
+						"name" : "right",
+						"in" : "query",
+						"description" : "The right to be revoked.",
+						"required" : true,
+						"type" : "string",
+						"enum" : ["read", "write", "grant"]
+					}
+				],
+				"responses" : {
+					"200" : {
+						"description" : "Grant operation was successful, regardless of whether it did cause a change in the rights."
+					},
+					"400" : {
+						"description" : "Invalid API key supplied"
+					},
+					"403" : {
+						"description" : "Dataset creation is not authorised for this API key"
+					}
+				},
+				"security" : [{
+						"api_key" : []
+					}
+				]
+			}
+		},
+		"/entity" : {
+			"get" : {
+				"tags" : ["entity"],
+				"produces" : ["application/json"],
+				"responses" : {
+					"200" : {
+						"description" : "Metadata of the entity service and available types."
+					}
+				},
+				"security" : [{
+						"api_key" : []
+					}
+				]
+			}
+		},
+		"/entity/{dataQuery}" : {
+			"get" : {
+				"tags" : ["entity"],
+				"summary" : "The primary method to get aggregated entity data",
+				"description" : "Returns all the data on the entity/ies that match the supplied data query, aggregated from the datasets that can be accessed by the supplied API key.",
+				"produces" : ["application/json"],
+				"parameters" : [{
+						"name" : "dataQuery",
+						"in" : "path",
+						"description" : "A conjunctive query consisting of one or more slash-separated atoms of the type {attribute}--{value} or {type}",
+						"required" : true,
+						"type" : "string"
+					}
+				],
+				"responses" : {
+					"200" : {
+						"description" : "The entity data. This response is returned even if there are no data (no 404 is ever returned by the entity API)."
+					}
+				},
+				"security" : [{
+						"api_key" : []
+					}
+				]
+			}
+		}
+	},
+	"securityDefinitions" : {
+		"api_key" : {
+			"type" : "apiKey",
+			"name" : "api_key",
+			"description" : "There will be API keys for applications, extractors and users wishing to consume the dataset. I'm not a big fan of having it as a query param, but it allows us to handle the union of multiple API keys, something basic HTTP authentication won't do. The generation of API keys is ouside the remit of this specification for the time being.",
+			"in" : "query"
+		}
+	}
+}

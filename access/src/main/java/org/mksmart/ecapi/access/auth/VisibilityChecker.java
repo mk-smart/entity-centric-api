@@ -61,7 +61,8 @@ public class VisibilityChecker {
         this.catalogue = catalogue;
         this.checker = new AuthServerPolicyChecker();
         if (!config.has(Config.KEYMGMT_AUTHSVR_HOST)) {
-            log.warn("No authorisation server URI given. Treating all datasets as open!");
+            log.warn("No authorisation server URI given."
+                     + " Unless another permission checker is instantiated, all datasets will be treated as open!");
             // Run once if there is no authorisation server.
             doPolicies();
         } else {

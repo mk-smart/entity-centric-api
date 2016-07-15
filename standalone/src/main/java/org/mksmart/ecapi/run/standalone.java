@@ -64,8 +64,6 @@ import org.slf4j.LoggerFactory;
  */
 public class standalone {
 
-    private static boolean force = false;
-
     /**
      * Command-line parser for standalone application.
      * 
@@ -85,16 +83,6 @@ public class standalone {
                         + " (WARNING: only use if you know what you are doing!).");
             options.addOption("h", "help", false, "Show this help.");
             options.addOption("p", "port", true, "Set the port the server will listen to (defaults to 8080).");
-        }
-
-        /**
-         * Prints help.
-         */
-        private void help() {
-            String syntax = "java [java-opts] -jar [this-jarfile] -c [config-file] [TASK]";
-            String footer = "TASK can be one of init|repair or none at all (for normal ECAPI operation).";
-            new HelpFormatter().printHelp(syntax, "", options, footer);
-            System.exit(0);
         }
 
         /**
@@ -157,19 +145,124 @@ public class standalone {
             }
         }
 
+        /**
+         * Prints help.
+         */
+        private void help() {
+            String syntax = "java [java-opts] -jar [this-jarfile] -c [config-file] [TASK]";
+            String footer = "TASK can be one of init|repair or none at all (for normal ECAPI operation).";
+            new HelpFormatter().printHelp(syntax, "", options, footer);
+            System.exit(0);
+        }
+
     }
 
     public static final String _DEFAULT_STORE_CLASSNAME = "org.mksmart.ecapi.impl.storage.NonStoringEntityStore";
 
+    private static boolean force = false;
+
     private static Logger log = LoggerFactory.getLogger(standalone.class);
+
+    private static final int MISCONFIGURED = -3;
 
     private static int port = 8080;
 
-    private static final int UNREACHABLE_COMPILER = -1;
-
     private static final int STORE_INITIALIZE = -2;
 
-    private static final int MISCONFIGURED = -3;
+    private static final int UNREACHABLE_COMPILER = -1;
+
+    public static void main(String[] args) throws Exception {
+        long before = System.currentTimeMillis();
+        new Cli(args).parse();
+        log.info("Initialising Jetty server on port {}", port);
+        Server server = new Server();
+        ServerConnector connector = new ServerConnector(server);
+        // Set some timeout options to make debugging easier.
+        connector.setIdleTimeout(1000 * 60 * 60);
+        connector.setSoLingerTime(-1);
+        connector.setPort(port);
+        server.setConnectors(new Connector[] {connector});
+
+        WebAppContext root = new WebAppContext();
+        root.setContextPath("/");
+        String webxmlLocation = standalone.class.getResource("/WEB-INF/web.xml").toString();
+        root.setDescriptor(webxmlLocation);
+        String resLocation = standalone.class.getResource("/webroot").toString();
+        root.setResourceBase(resLocation);
+        root.setParentLoaderPriority(true);
+        server.setHandler(root);
+
+        initWebApp(root);
+
+        try {
+            server.start();
+            // while (System.in.available() == 0) {
+            // Thread.sleep(5000);
+            // server.stop();
+            server.join();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(100);
+        }
+
+        log.info("Startup completed in {} ms", System.currentTimeMillis() - before);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void initStore(WebAppContext wactx, Config config) {
+        Store store;
+        String prop = "store.class";
+        String scname = config.asProperties().getProperty(prop, _DEFAULT_STORE_CLASSNAME);
+        Class<? extends Store> storeClazz;
+        if (config.getStorageDbName() == null || config.getStorageDbName().isEmpty()) {
+            log.warn("Storage DB name not set. ECAPI will run in stateless mode.");
+            storeClazz = NonStoringEntityStore.class;
+        } else try {
+            storeClazz = Class.forName(scname).asSubclass(Store.class);
+        } catch (ClassNotFoundException | ClassCastException e) {
+            String errMsg;
+            if (e instanceof ClassNotFoundException) errMsg = "Illegal store class name {} : could not find such a class to load.";
+            else errMsg = "Invalid store class name {} : it is not an implementation of "
+                          + Store.class.getCanonicalName();
+            log.error(" ### FATAL ### : " + errMsg, scname);
+            log.error("If you do not know which class name to use for the store, "
+                      + "unset the '{}' parameter in your properties file to launch a stateless runtime.",
+                prop);
+            log.error("Alternatively, refer to the ECAPI documentation for legal store implementation names.");
+            log.error("Exiting now");
+            System.exit(STORE_INITIALIZE);
+            return;
+        }
+        log.debug("Initializing store of type {}", storeClazz.getCanonicalName());
+        try {
+            store = storeClazz.getDeclaredConstructor(new Class[] {Config.class}).newInstance(config);
+        } catch (IllegalStateException | InstantiationException | IllegalAccessException
+                | IllegalArgumentException | InvocationTargetException | SecurityException ex) {
+            log.error("{} caught for storage database.", ex.getClass());
+            log.error(" ... is your storage DB running (most likely CouchDb)?");
+            log.error("Exiting now");
+            System.exit(UNREACHABLE_COMPILER);
+            return;
+        } catch (NoSuchMethodException e) {
+            try {
+                store = storeClazz.newInstance();
+            } catch (InstantiationException | IllegalAccessException e1) {
+                log.error("{} caught for storage database.", e1.getClass());
+                log.error("Exiting now");
+                System.exit(UNREACHABLE_COMPILER);
+                return;
+            }
+        }
+        if (store != null) {
+            log.debug("Store initialized.");
+            wactx.getServletContext().setAttribute(Store.class.getName(), store);
+        } else {
+            log.error("Store is null, but expected a {} - This shouldn't be happening.",
+                storeClazz.getCanonicalName());
+            System.exit(STORE_INITIALIZE);
+            return;
+        }
+    }
 
     /**
      * Initialises the main Web application on a given {@link WebAppContext} by registering shared resources
@@ -265,99 +358,6 @@ public class standalone {
                 .containsKey(KEYMGMT_MYSQL_USER)) || configuration.containsKey(KEYMGMT_KEY_OPENDATA)) return new SsimpleAuthKeyDriver(
                 configuration);
         else return new PermissiveKeyDriver();
-    }
-
-    @SuppressWarnings("rawtypes")
-    private static void initStore(WebAppContext wactx, Config config) {
-        Store store;
-        String prop = "store.class";
-        String scname = config.asProperties().getProperty(prop, _DEFAULT_STORE_CLASSNAME);
-        Class<? extends Store> storeClazz;
-        if (config.getStorageDbName() == null || config.getStorageDbName().isEmpty()) {
-            log.warn("Storage DB name not set. ECAPI will be run stateless.");
-            storeClazz = NonStoringEntityStore.class;
-        } else try {
-            storeClazz = Class.forName(scname).asSubclass(Store.class);
-        } catch (ClassNotFoundException | ClassCastException e) {
-            String errMsg;
-            if (e instanceof ClassNotFoundException) errMsg = "Illegal store class name {} : could not find such a class to load.";
-            else errMsg = "Invalid store class name {} : it is not an implementation of "
-                          + Store.class.getCanonicalName();
-            log.error(" ### FATAL ### : " + errMsg, scname);
-            log.error("If you do not know which class name to use for the store, "
-                      + "unset the '{}' parameter in your properties file to launch a stateless runtime.",
-                prop);
-            log.error("Alternatively, refer to the ECAPI documentation for legal store implementation names.");
-            log.error("Exiting now");
-            System.exit(STORE_INITIALIZE);
-            return;
-        }
-        log.debug("Initializing store of type {}", storeClazz.getCanonicalName());
-        try {
-            store = storeClazz.getDeclaredConstructor(new Class[] {Config.class}).newInstance(config);
-        } catch (IllegalStateException | InstantiationException | IllegalAccessException
-                | IllegalArgumentException | InvocationTargetException | SecurityException ex) {
-            log.error("{} caught for storage database.", ex.getClass());
-            log.error(" ... is your storage DB running (most likely CouchDb)?");
-            log.error("Exiting now");
-            System.exit(UNREACHABLE_COMPILER);
-            return;
-        } catch (NoSuchMethodException e) {
-            try {
-                store = storeClazz.newInstance();
-            } catch (InstantiationException | IllegalAccessException e1) {
-                log.error("{} caught for storage database.", e1.getClass());
-                log.error("Exiting now");
-                System.exit(UNREACHABLE_COMPILER);
-                return;
-            }
-        }
-        if (store != null) {
-            log.debug("Store initialized.");
-            wactx.getServletContext().setAttribute(Store.class.getName(), store);
-        } else {
-            log.error("Store is null, but expected a {} - This shouldn't be happening.",
-                storeClazz.getCanonicalName());
-            System.exit(STORE_INITIALIZE);
-            return;
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        long before = System.currentTimeMillis();
-        new Cli(args).parse();
-        log.info("Initialising Jetty server on port {}", port);
-        Server server = new Server();
-        ServerConnector connector = new ServerConnector(server);
-        // Set some timeout options to make debugging easier.
-        connector.setIdleTimeout(1000 * 60 * 60);
-        connector.setSoLingerTime(-1);
-        connector.setPort(port);
-        server.setConnectors(new Connector[] {connector});
-
-        WebAppContext root = new WebAppContext();
-        root.setContextPath("/");
-        String webxmlLocation = standalone.class.getResource("/WEB-INF/web.xml").toString();
-        root.setDescriptor(webxmlLocation);
-        String resLocation = standalone.class.getResource("/webroot").toString();
-        root.setResourceBase(resLocation);
-        root.setParentLoaderPriority(true);
-        server.setHandler(root);
-
-        initWebApp(root);
-
-        try {
-            server.start();
-            // while (System.in.available() == 0) {
-            // Thread.sleep(5000);
-            // server.stop();
-            server.join();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(100);
-        }
-
-        log.info("Startup completed in {} ms", System.currentTimeMillis() - before);
     }
 
 }

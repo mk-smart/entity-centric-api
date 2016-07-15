@@ -11,7 +11,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
 # MK:Smart entity-centric API
 
 This is a standalone server of a RESTful API for exposing integrated linked data.
@@ -20,7 +19,7 @@ This implementation is in Java and entirely Maven-based. There are no external d
 
 ## Requirements
 
-To __build__ the API you will need JDK 1.7 and [Maven 3](http://maven.apache.org). It still has to be tested with Java 8.
+To __build__ the API you will need JDK 1.7 and [Maven 3](http://maven.apache.org). Java 8 is currently under test.
 
 To __run__ the API you will need a JRE 1.7 and a running instance of [CouchDB](http://couchdb.apache.org) 1.6.x.
 

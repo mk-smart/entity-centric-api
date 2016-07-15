@@ -26,6 +26,7 @@ import org.apache.stanbol.commons.testing.http.RequestExecutor;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.mksmart.ecapi.it.JarRunner;
+import org.mksmart.ecapi.web.HomepageTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
