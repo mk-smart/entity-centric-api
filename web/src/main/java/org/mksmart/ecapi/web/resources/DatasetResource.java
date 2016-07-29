@@ -19,13 +19,14 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mksmart.ecapi.access.ApiKeyDriver;
 import org.mksmart.ecapi.api.id.IdGenerator;
+import org.mksmart.ecapi.web.JsonMessageFactory;
 import org.mksmart.ecapi.web.util.SPARQLWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +64,29 @@ public class DatasetResource extends BaseResource {
         return rb.build();
     }
 
+    @GET
+    @Path("{uuid}")
+    @Produces(value = {MediaType.APPLICATION_JSON})
+    public Response getInfo(@PathParam("uuid") String uuid,
+                            @QueryParam("key") String key,
+                            @Context HttpHeaders headers,
+                            @Context HttpServletRequest request) {
+        ResponseBuilder rb;
+        SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
+        boolean exi = writer.exists("urn:dataset/" + uuid + "/graph");
+        JSONObject json = new JSONObject();
+        json.put("requested", uuid);
+        json.put("found", exi);
+        if (exi) {
+            json.put(
+                "comment",
+                "Dataset exists but retrieving raw data from it is not implemented yet."
+                        + " Entity-specific data can be retrieved by configuring the entity API to work with this dataset.");
+            rb = Response.ok(json);
+        } else rb = Response.status(Status.NOT_FOUND).entity(json);
+        return rb.build();
+    }
+
     @Override
     public ServletContext getServletContext() {
         return this.servletContext;
@@ -72,20 +96,12 @@ public class DatasetResource extends BaseResource {
     @Produces(value = {MediaType.APPLICATION_JSON})
     public Response getSignOfLife(@Context HttpHeaders headers) {
         ResponseBuilder rb;
-        JSONObject sol = new JSONObject();
-        JSONArray dss = new JSONArray();
         Set<String> datasets = handleCredentials(headers, false);
-        if (datasets != null) for (String ds : datasets)
-            dss.put(ds);
         try {
-            sol.put("live", true);
-            sol.put("subresources", dss);
-            sol.put("comment", "Beware: I live!");
-            rb = Response.ok(sol);
+            rb = Response.ok(JsonMessageFactory.alive(datasets));
         } catch (JSONException e) {
             rb = Response.serverError();
         }
-
         handleCors(rb);
         return rb.build();
     }
@@ -135,18 +151,35 @@ public class DatasetResource extends BaseResource {
     public Response write(@PathParam("uuid") String uuid,
                           @QueryParam("key") String key,
                           @FormParam("data") String data,
+                          @FormParam("rdf") String rdf,
                           @Context HttpHeaders headers,
                           @Context HttpServletRequest request) {
-        ResponseBuilder rb = null;
+        ResponseBuilder rb;
         if (key == null || !writeAuthorised(key, uuid, headers, request)) {
             rb = Response.status(Response.Status.FORBIDDEN);
             return rb.build();
         }
+        if (rdf != null) {
+            if (data == null) data = rdf;
+            else {
+                rb = Response
+                        .status(Response.Status.BAD_REQUEST)
+                        .entity(
+                            JsonMessageFactory
+                                    .badRequest("You can interchangeably use form params 'data' or 'rdf' but not both"));
+                return rb.build();
+            }
+        }
+        if (data == null) rb = Response
+                .status(Response.Status.BAD_REQUEST)
+                .entity(
+                    JsonMessageFactory
+                            .badRequest("Form param 'data' is required, and you do not seem to have used the deprecated 'rdf' parameter."));
         SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
         int code = writer.write(data, "urn:dataset/" + uuid + "/graph");
         if (code != 200) rb = Response.status(code);
         else {
-            JSONObject o = new JSONObject().put("status:", "written to " + uuid + "\n");
+            JSONObject o = new JSONObject().put("status:", "written to " + uuid);
             rb = Response.ok((JSONObject) o);
         }
         return rb.build();
