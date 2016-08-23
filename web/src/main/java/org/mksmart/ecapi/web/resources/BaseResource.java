@@ -2,6 +2,7 @@ package org.mksmart.ecapi.web.resources;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -43,9 +44,9 @@ public abstract class BaseResource {
      * @param rb
      *            the response being built.
      */
-    protected void handleCors(ResponseBuilder rb) {
+    protected void handleCors(ResponseBuilder rb, String... methods) {
         // addCORSOrigin(servletContext, rb, headers);
-        handleCors(rb, null);
+        handleCors(rb, null, methods);
     }
 
     /**
@@ -58,12 +59,26 @@ public abstract class BaseResource {
      * @param origin
      *            the request origin to allow. If null, defaults to all (*).
      */
-    protected void handleCors(ResponseBuilder rb, URL origin) {
+    protected void handleCors(ResponseBuilder rb, URL origin, String... methods) {
+        if (methods.length == 0) methods = new String[] {"GET", "OPTIONS"};
+        // Uniquify and make sure OPTIONS is there
+        Set<String> temp = new HashSet<>(Arrays.asList(methods));
+        temp.add("OPTIONS");
+        methods = temp.toArray(new String[0]);
+        StringBuilder sb = new StringBuilder();
+        Set<String> acceptable = new HashSet<String>(Arrays.asList(new String[] {"DELETE", "GET", "OPTIONS",
+                                                                                 "PATCH", "POST", "PUT"}));
+        boolean previousOk = false;
+        for (int i = 0; i < methods.length; i++)
+            if (acceptable.contains(methods[i])) {
+                previousOk = true;
+                if (i != 0 && previousOk) sb.append(", ");
+                sb.append(methods[i]);
+            }
         rb.header("Access-Control-Allow-Origin", origin == null ? "*" : origin);
         rb.header("Access-Control-Allow-Headers", "origin, content-type, accept, authorization");
         rb.header("Access-Control-Allow-Credentials", "true");
-        // TODO make allow-methods customisable
-        rb.header("Access-Control-Allow-Methods", "GET, OPTIONS");
+        rb.header("Access-Control-Allow-Methods", sb.toString());
         rb.header("Access-Control-Max-Age", "1209600"); // Two weeks
     }
 

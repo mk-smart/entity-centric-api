@@ -8,6 +8,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -52,7 +53,7 @@ public class DatasetResource extends BaseResource {
                            @QueryParam("key") String key,
                            @Context HttpHeaders headers,
                            @Context HttpServletRequest request) {
-        ResponseBuilder rb = null;
+        ResponseBuilder rb;
         if (key != null && writeAuthorised(key, uuid, headers, request)) {
             SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
             int code = writer.createGraph("urn:dataset/" + uuid + "/graph");
@@ -61,6 +62,7 @@ public class DatasetResource extends BaseResource {
                 rb = Response.ok((JSONObject) o);
             } else rb = Response.status(code);
         } else rb = Response.status(Response.Status.FORBIDDEN);
+        handleCors(rb, "GET", "POST", "PUT");
         return rb.build();
     }
 
@@ -84,6 +86,7 @@ public class DatasetResource extends BaseResource {
                         + " Entity-specific data can be retrieved by configuring the entity API to work with this dataset.");
             rb = Response.ok(json);
         } else rb = Response.status(Status.NOT_FOUND).entity(json);
+        handleCors(rb, "GET", "POST", "PUT");
         return rb.build();
     }
 
@@ -142,6 +145,24 @@ public class DatasetResource extends BaseResource {
         return rb.build();
     }
 
+    @OPTIONS
+    public Response options(@Context HttpHeaders headers, @Context UriInfo uriInfo) {
+        ResponseBuilder rb = Response.ok();
+        handleCors(rb);
+        return rb.build();
+    }
+
+    @OPTIONS
+    @Path("{uuid}")
+    public Response optionsType(@PathParam("uuid") String uuid,
+                                @QueryParam("key") String key,
+                                @Context HttpHeaders headers,
+                                @Context HttpServletRequest request) {
+        ResponseBuilder rb = Response.ok();
+        handleCors(rb, "GET", "POST", "PUT");
+        return rb.build();
+    }
+
     // TODO:
     // Add a new endpoint grant/{uuid}
     // Check with A why DSS is ignored when using key above
@@ -157,9 +178,9 @@ public class DatasetResource extends BaseResource {
         ResponseBuilder rb;
         if (key == null || !writeAuthorised(key, uuid, headers, request)) {
             rb = Response.status(Response.Status.FORBIDDEN);
+            handleCors(rb, "GET", "POST", "PUT");
             return rb.build();
-        }
-        if (rdf != null) {
+        } else if (rdf != null) {
             if (data == null) data = rdf;
             else {
                 rb = Response
@@ -167,6 +188,7 @@ public class DatasetResource extends BaseResource {
                         .entity(
                             JsonMessageFactory
                                     .badRequest("You can interchangeably use form params 'data' or 'rdf' but not both"));
+                handleCors(rb, "GET", "POST", "PUT");
                 return rb.build();
             }
         }
@@ -182,6 +204,7 @@ public class DatasetResource extends BaseResource {
             JSONObject o = new JSONObject().put("status:", "written to " + uuid);
             rb = Response.ok((JSONObject) o);
         }
+        handleCors(rb, "GET", "POST", "PUT");
         return rb.build();
     }
 
