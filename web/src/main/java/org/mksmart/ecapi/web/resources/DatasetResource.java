@@ -50,10 +50,12 @@ public class DatasetResource extends BaseResource {
     @Path("{uuid}")
     @Produces(value = {MediaType.APPLICATION_JSON})
     public Response create(@PathParam("uuid") String uuid,
-                           @QueryParam("key") String key,
+                           @QueryParam("api_key") String key,
+                           @QueryParam("key") String oldKey,
                            @Context HttpHeaders headers,
                            @Context HttpServletRequest request) {
         ResponseBuilder rb;
+        key = selectKey(key, oldKey);
         if (key != null && writeAuthorised(key, uuid, headers, request)) {
             SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
             int code = writer.createGraph("urn:dataset/" + uuid + "/graph");
@@ -70,10 +72,12 @@ public class DatasetResource extends BaseResource {
     @Path("{uuid}")
     @Produces(value = {MediaType.APPLICATION_JSON})
     public Response getInfo(@PathParam("uuid") String uuid,
-                            @QueryParam("key") String key,
+                            @QueryParam("api_key") String key,
+                            @QueryParam("key") String oldKey,
                             @Context HttpHeaders headers,
                             @Context HttpServletRequest request) {
         ResponseBuilder rb;
+        key = selectKey(key, oldKey);
         SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
         boolean exi = writer.exists("urn:dataset/" + uuid + "/graph");
         JSONObject json = new JSONObject();
@@ -113,11 +117,12 @@ public class DatasetResource extends BaseResource {
     @Path("{uuid}/grant")
     @Produces(value = {MediaType.APPLICATION_JSON})
     public Response grant(@PathParam("uuid") String uuid,
-                          @QueryParam("key") String key,
+                          @QueryParam("api_key") String key,
+                          @QueryParam("key") String oldKey,
                           @FormParam("right") String right,
                           @FormParam("ukey") String ukey) {
         ResponseBuilder rb = null;
-
+        key = selectKey(key, oldKey);
         if (key == null) rb = Response.status(Response.Status.FORBIDDEN);
         else if (right == null) rb = Response.status(Response.Status.BAD_REQUEST);
         else if (!right.equals("write") && !right.equals("read") && !right.equals("grant")) rb = Response
@@ -155,10 +160,12 @@ public class DatasetResource extends BaseResource {
     @OPTIONS
     @Path("{uuid}")
     public Response optionsType(@PathParam("uuid") String uuid,
-                                @QueryParam("key") String key,
+                                @QueryParam("api_key") String key,
+                                @QueryParam("key") String oldKey,
                                 @Context HttpHeaders headers,
                                 @Context HttpServletRequest request) {
         ResponseBuilder rb = Response.ok();
+        key = selectKey(key, oldKey);
         handleCors(rb, "GET", "POST", "PUT");
         return rb.build();
     }
@@ -170,12 +177,14 @@ public class DatasetResource extends BaseResource {
     @Path("{uuid}")
     @Produces(value = {MediaType.APPLICATION_JSON})
     public Response write(@PathParam("uuid") String uuid,
-                          @QueryParam("key") String key,
+                          @QueryParam("api_key") String key,
+                          @QueryParam("key") String oldKey,
                           @FormParam("data") String data,
                           @FormParam("rdf") String rdf,
                           @Context HttpHeaders headers,
                           @Context HttpServletRequest request) {
         ResponseBuilder rb;
+        key = selectKey(key, oldKey);
         if (key == null || !writeAuthorised(key, uuid, headers, request)) {
             rb = Response.status(Response.Status.FORBIDDEN);
             handleCors(rb, "GET", "POST", "PUT");
@@ -220,6 +229,15 @@ public class DatasetResource extends BaseResource {
         @SuppressWarnings("rawtypes")
         IdGenerator ig = (IdGenerator) servletContext.getAttribute(IdGenerator.class.getName());
         ig.refresh();
+    }
+
+    protected String selectKey(String newer, String older) {
+        if (newer != null && !newer.isEmpty()) {
+            if (older != null && !older.isEmpty()) log
+                    .warn("API key {} was supplied using both the old query param and the new one. They should not be used together.");
+            return newer;
+        }
+        return older;
     }
 
     protected boolean writeAuthorised(String key, String uuid, HttpHeaders headers, HttpServletRequest request) {
