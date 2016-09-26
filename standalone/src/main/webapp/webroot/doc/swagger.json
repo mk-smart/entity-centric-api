@@ -14,6 +14,9 @@
 		}, {
 			"name" : "entity",
 			"description" : "Access to aggregated entity data"
+		}, {
+			"name" : "provenance",
+			"description" : "Metadata to determine the sources of the data"
 		}
 	],
 	"paths" : {
@@ -176,7 +179,7 @@
 						"required" : true,
 						"type" : "string"
 					}, {
-						"name" : "grantee",
+						"name" : "key",
 						"in" : "query",
 						"description" : "The API key that is being granted the right.",
 						"required" : true,
@@ -219,7 +222,7 @@
 						"required" : true,
 						"type" : "string"
 					}, {
-						"name" : "grantee",
+						"name" : "key",
 						"in" : "query",
 						"description" : "The API key that is being revoked the right.",
 						"required" : true,
@@ -260,32 +263,94 @@
 					}
 				},
 				"security" : [{
-						"api_key" : []
+						"http_auth" : []
 					}
 				]
 			}
 		},
-		"/entity/{dataQuery}" : {
+		"/entity/{type}" : {
 			"get" : {
 				"tags" : ["entity"],
-				"summary" : "The primary method to get aggregated entity data",
-				"description" : "Returns all the data on the entity/ies that match the supplied data query, aggregated from the datasets that can be accessed by the supplied API key.",
+				"summary" : "List instances of an entity type",
+				"description" : "Lists the instances of this type of entity that can be accessed by the supplied API key.",
 				"produces" : ["application/json"],
 				"parameters" : [{
-						"name" : "dataQuery",
+						"name" : "type",
 						"in" : "path",
-						"description" : "A conjunctive query consisting of one or more slash-separated atoms of the type {attribute}--{value} or {type}",
+						"description" : "The short name for one of the types of this entity",
 						"required" : true,
 						"type" : "string"
 					}
 				],
 				"responses" : {
 					"200" : {
-						"description" : "The entity data. This response is returned even if there are no data (no 404 is ever returned by the entity API)."
+						"description" : "The entity data. This response is returned even if there are no data (no 404 should ever be returned by the entity API)."
 					}
 				},
 				"security" : [{
-						"api_key" : []
+						"http_auth" : []
+					}
+				]
+			}
+		},
+		"/entity/{type}/{dataQuery}" : {
+			"get" : {
+				"tags" : ["entity"],
+				"summary" : "The primary method to get aggregated entity data",
+				"description" : "Returns all the data on the entity/ies that match the supplied data query, aggregated from the datasets that can be accessed by the supplied API key.",
+				"produces" : ["application/json"],
+				"parameters" : [{
+						"name" : "type",
+						"in" : "path",
+						"description" : "The short name for one of the types of this entity",
+						"required" : true,
+						"type" : "string"
+					},{
+						"name" : "dataQuery",
+						"in" : "path",
+						"description" : "A conjunctive query consisting of one or more slash-separated atoms of the type {id} or {attribute}--{value}",
+						"required" : true,
+						"type" : "string"
+					}
+				],
+				"responses" : {
+					"200" : {
+						"description" : "The entity data. This response is returned even if there are no data (no 404 should ever be returned by the entity API)."
+					}
+				},
+				"security" : [{
+						"http_auth" : []
+					}
+				]
+			}
+		},
+		"/entity/{type}/{dataQuery}.prov" : {
+			"get" : {
+				"tags" : ["entity"],
+				"summary" : "Get provenance information about the aggregated entity data",
+				"description" : "Returns the provenance metadata for the property paths of the results of this query, assuming it would be executed at about the same time using the same authorisation credentials.",
+				"produces" : ["application/json"],
+				"parameters" : [{
+						"name" : "type",
+						"in" : "path",
+						"description" : "The short name for one of the types of this entity",
+						"required" : true,
+						"type" : "string"
+					},{
+						"name" : "dataQuery",
+						"in" : "path",
+						"description" : "A conjunctive query consisting of one or more slash-separated atoms of the type {id} or {attribute}--{value}",
+						"required" : true,
+						"type" : "string"
+					}
+				],
+				"responses" : {
+					"200" : {
+						"description" : "The provenance metadata. This response is returned even if there are no data (no 404 should ever be returned by the entity API)."
+					}
+				},
+				"security" : [{
+						"http_auth" : []
 					}
 				]
 			}
@@ -297,6 +362,10 @@
 			"name" : "api_key",
 			"description" : "There will be API keys for applications, extractors and users wishing to consume the dataset. I'm not a big fan of having it as a query param, but it allows us to handle the union of multiple API keys, something basic HTTP authentication won't do. The generation of API keys is ouside the remit of this specification for the time being.",
 			"in" : "query"
+		},
+		"http_auth" : {
+			"type" : "basic",
+			"description" : "Old ways of passing API key as Basic HTTP Authentication user (no password required unless further arrangements are made). Still used by entity API. Will be phased out?"
 		}
 	}
 }

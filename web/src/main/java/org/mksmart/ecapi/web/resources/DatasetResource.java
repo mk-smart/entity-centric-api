@@ -8,6 +8,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -19,13 +20,14 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mksmart.ecapi.access.ApiKeyDriver;
 import org.mksmart.ecapi.api.id.IdGenerator;
+import org.mksmart.ecapi.web.JsonMessageFactory;
 import org.mksmart.ecapi.web.util.SPARQLWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,10 +50,12 @@ public class DatasetResource extends BaseResource {
     @Path("{uuid}")
     @Produces(value = {MediaType.APPLICATION_JSON})
     public Response create(@PathParam("uuid") String uuid,
-                           @QueryParam("key") String key,
+                           @QueryParam("api_key") String key,
+                           @QueryParam("key") String oldKey,
                            @Context HttpHeaders headers,
                            @Context HttpServletRequest request) {
-        ResponseBuilder rb = null;
+        ResponseBuilder rb;
+        key = selectKey(key, oldKey);
         if (key != null && writeAuthorised(key, uuid, headers, request)) {
             SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
             int code = writer.createGraph("urn:dataset/" + uuid + "/graph");
@@ -60,6 +64,33 @@ public class DatasetResource extends BaseResource {
                 rb = Response.ok((JSONObject) o);
             } else rb = Response.status(code);
         } else rb = Response.status(Response.Status.FORBIDDEN);
+        handleCors(rb, "GET", "POST", "PUT");
+        return rb.build();
+    }
+
+    @GET
+    @Path("{uuid}")
+    @Produces(value = {MediaType.APPLICATION_JSON})
+    public Response getInfo(@PathParam("uuid") String uuid,
+                            @QueryParam("api_key") String key,
+                            @QueryParam("key") String oldKey,
+                            @Context HttpHeaders headers,
+                            @Context HttpServletRequest request) {
+        ResponseBuilder rb;
+        key = selectKey(key, oldKey);
+        SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
+        boolean exi = writer.exists("urn:dataset/" + uuid + "/graph");
+        JSONObject json = new JSONObject();
+        json.put("requested", uuid);
+        json.put("found", exi);
+        if (exi) {
+            json.put(
+                "comment",
+                "Dataset exists but retrieving raw data from it is not implemented yet."
+                        + " Entity-specific data can be retrieved by configuring the entity API to work with this dataset.");
+            rb = Response.ok(json);
+        } else rb = Response.status(Status.NOT_FOUND).entity(json);
+        handleCors(rb, "GET", "POST", "PUT");
         return rb.build();
     }
 
@@ -72,20 +103,12 @@ public class DatasetResource extends BaseResource {
     @Produces(value = {MediaType.APPLICATION_JSON})
     public Response getSignOfLife(@Context HttpHeaders headers) {
         ResponseBuilder rb;
-        JSONObject sol = new JSONObject();
-        JSONArray dss = new JSONArray();
         Set<String> datasets = handleCredentials(headers, false);
-        if (datasets != null) for (String ds : datasets)
-            dss.put(ds);
         try {
-            sol.put("live", true);
-            sol.put("subresources", dss);
-            sol.put("comment", "Beware: I live!");
-            rb = Response.ok(sol);
+            rb = Response.ok(JsonMessageFactory.alive(datasets));
         } catch (JSONException e) {
             rb = Response.serverError();
         }
-
         handleCors(rb);
         return rb.build();
     }
@@ -94,11 +117,12 @@ public class DatasetResource extends BaseResource {
     @Path("{uuid}/grant")
     @Produces(value = {MediaType.APPLICATION_JSON})
     public Response grant(@PathParam("uuid") String uuid,
-                          @QueryParam("key") String key,
+                          @QueryParam("api_key") String key,
+                          @QueryParam("key") String oldKey,
                           @FormParam("right") String right,
                           @FormParam("ukey") String ukey) {
         ResponseBuilder rb = null;
-
+        key = selectKey(key, oldKey);
         if (key == null) rb = Response.status(Response.Status.FORBIDDEN);
         else if (right == null) rb = Response.status(Response.Status.BAD_REQUEST);
         else if (!right.equals("write") && !right.equals("read") && !right.equals("grant")) rb = Response
@@ -126,6 +150,26 @@ public class DatasetResource extends BaseResource {
         return rb.build();
     }
 
+    @OPTIONS
+    public Response options(@Context HttpHeaders headers, @Context UriInfo uriInfo) {
+        ResponseBuilder rb = Response.ok();
+        handleCors(rb);
+        return rb.build();
+    }
+
+    @OPTIONS
+    @Path("{uuid}")
+    public Response optionsType(@PathParam("uuid") String uuid,
+                                @QueryParam("api_key") String key,
+                                @QueryParam("key") String oldKey,
+                                @Context HttpHeaders headers,
+                                @Context HttpServletRequest request) {
+        ResponseBuilder rb = Response.ok();
+        key = selectKey(key, oldKey);
+        handleCors(rb, "GET", "POST", "PUT");
+        return rb.build();
+    }
+
     // TODO:
     // Add a new endpoint grant/{uuid}
     // Check with A why DSS is ignored when using key above
@@ -133,22 +177,43 @@ public class DatasetResource extends BaseResource {
     @Path("{uuid}")
     @Produces(value = {MediaType.APPLICATION_JSON})
     public Response write(@PathParam("uuid") String uuid,
-                          @QueryParam("key") String key,
+                          @QueryParam("api_key") String key,
+                          @QueryParam("key") String oldKey,
                           @FormParam("data") String data,
+                          @FormParam("rdf") String rdf,
                           @Context HttpHeaders headers,
                           @Context HttpServletRequest request) {
-        ResponseBuilder rb = null;
+        ResponseBuilder rb;
+        key = selectKey(key, oldKey);
         if (key == null || !writeAuthorised(key, uuid, headers, request)) {
             rb = Response.status(Response.Status.FORBIDDEN);
+            handleCors(rb, "GET", "POST", "PUT");
             return rb.build();
+        } else if (rdf != null) {
+            if (data == null) data = rdf;
+            else {
+                rb = Response
+                        .status(Response.Status.BAD_REQUEST)
+                        .entity(
+                            JsonMessageFactory
+                                    .badRequest("You can interchangeably use form params 'data' or 'rdf' but not both"));
+                handleCors(rb, "GET", "POST", "PUT");
+                return rb.build();
+            }
         }
+        if (data == null) rb = Response
+                .status(Response.Status.BAD_REQUEST)
+                .entity(
+                    JsonMessageFactory
+                            .badRequest("Form param 'data' is required, and you do not seem to have used the deprecated 'rdf' parameter."));
         SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
         int code = writer.write(data, "urn:dataset/" + uuid + "/graph");
         if (code != 200) rb = Response.status(code);
         else {
-            JSONObject o = new JSONObject().put("status:", "written to " + uuid + "\n");
+            JSONObject o = new JSONObject().put("status:", "written to " + uuid);
             rb = Response.ok((JSONObject) o);
         }
+        handleCors(rb, "GET", "POST", "PUT");
         return rb.build();
     }
 
@@ -164,6 +229,15 @@ public class DatasetResource extends BaseResource {
         @SuppressWarnings("rawtypes")
         IdGenerator ig = (IdGenerator) servletContext.getAttribute(IdGenerator.class.getName());
         ig.refresh();
+    }
+
+    protected String selectKey(String newer, String older) {
+        if (newer != null && !newer.isEmpty()) {
+            if (older != null && !older.isEmpty()) log
+                    .warn("API key {} was supplied using both the old query param and the new one. They should not be used together.");
+            return newer;
+        }
+        return older;
     }
 
     protected boolean writeAuthorised(String key, String uuid, HttpHeaders headers, HttpServletRequest request) {
