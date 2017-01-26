@@ -28,4 +28,11 @@ public class JsonMessageFactory {
         return response;
     }
 
+    public static JSONObject response(int statusCode, String message) {
+        JSONObject response = new JSONObject();
+        response.put("code", statusCode);
+        response.put("message", message);
+        return response;
+    }
+
 }

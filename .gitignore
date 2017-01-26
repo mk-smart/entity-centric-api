@@ -69,3 +69,6 @@ local.properties
  
 # PDT-specific
 .buildpath
+
+# added by jenv?
+.java-version

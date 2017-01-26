@@ -1,5 +1,9 @@
 package org.mksmart.ecapi.web.resources;
 
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.FORBIDDEN;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -20,7 +24,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.json.JSONException;
@@ -63,7 +66,7 @@ public class DatasetResource extends BaseResource {
                 JSONObject o = new JSONObject().put("status", "written to " + uuid);
                 rb = Response.ok((JSONObject) o);
             } else rb = Response.status(code);
-        } else rb = Response.status(Response.Status.FORBIDDEN);
+        } else rb = Response.status(FORBIDDEN);
         handleCors(rb, "GET", "POST", "PUT");
         return rb.build();
     }
@@ -89,7 +92,7 @@ public class DatasetResource extends BaseResource {
                 "Dataset exists but retrieving raw data from it is not implemented yet."
                         + " Entity-specific data can be retrieved by configuring the entity API to work with this dataset.");
             rb = Response.ok(json);
-        } else rb = Response.status(Status.NOT_FOUND).entity(json);
+        } else rb = Response.status(NOT_FOUND).entity(json);
         handleCors(rb, "GET", "POST", "PUT");
         return rb.build();
     }
@@ -123,10 +126,10 @@ public class DatasetResource extends BaseResource {
                           @FormParam("ukey") String ukey) {
         ResponseBuilder rb = null;
         key = selectKey(key, oldKey);
-        if (key == null) rb = Response.status(Response.Status.FORBIDDEN);
-        else if (right == null) rb = Response.status(Response.Status.BAD_REQUEST);
+        if (key == null) rb = Response.status(FORBIDDEN);
+        else if (right == null) rb = Response.status(BAD_REQUEST);
         else if (!right.equals("write") && !right.equals("read") && !right.equals("grant")) rb = Response
-                .status(Response.Status.BAD_REQUEST);
+                .status(BAD_REQUEST);
         else {
             ApiKeyDriver keyDrv = (ApiKeyDriver) servletContext.getAttribute(ApiKeyDriver.class.getName());
             boolean res = false;
@@ -141,7 +144,7 @@ public class DatasetResource extends BaseResource {
             if (right.equals("grant")) {
                 res = keyDrv.grant(key, ukey, uuid, ApiKeyDriver.GRANT_RIGHT);
             }
-            if (!res) rb = Response.status(Response.Status.FORBIDDEN);
+            if (!res) rb = Response.status(FORBIDDEN);
             else {
                 JSONObject o = new JSONObject().put("status:", "rights updated");
                 rb = Response.ok((JSONObject) o);
@@ -186,14 +189,14 @@ public class DatasetResource extends BaseResource {
         ResponseBuilder rb;
         key = selectKey(key, oldKey);
         if (key == null || !writeAuthorised(key, uuid, headers, request)) {
-            rb = Response.status(Response.Status.FORBIDDEN);
+            rb = Response.status(FORBIDDEN);
             handleCors(rb, "GET", "POST", "PUT");
             return rb.build();
         } else if (rdf != null) {
             if (data == null) data = rdf;
             else {
                 rb = Response
-                        .status(Response.Status.BAD_REQUEST)
+                        .status(BAD_REQUEST)
                         .entity(
                             JsonMessageFactory
                                     .badRequest("You can interchangeably use form params 'data' or 'rdf' but not both"));
@@ -202,13 +205,15 @@ public class DatasetResource extends BaseResource {
             }
         }
         if (data == null) rb = Response
-                .status(Response.Status.BAD_REQUEST)
+                .status(BAD_REQUEST)
                 .entity(
                     JsonMessageFactory
                             .badRequest("Form param 'data' is required, and you do not seem to have used the deprecated 'rdf' parameter."));
         SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
-        int code = writer.write(data, "urn:dataset/" + uuid + "/graph");
-        if (code != 200) rb = Response.status(code);
+        // FIXME THIS MUST NOT BE HARDCODED !!!!!!!!!!!!!!!!!!!!
+        int code = writer.write(data, "urn:dataset:" + uuid + ":graph");
+        if (code < 200 || code >= 400) rb = Response.status(code).entity(
+            JsonMessageFactory.response(code, "Writer returned erroneous HTTP code " + code));
         else {
             JSONObject o = new JSONObject().put("status:", "written to " + uuid);
             rb = Response.ok((JSONObject) o);

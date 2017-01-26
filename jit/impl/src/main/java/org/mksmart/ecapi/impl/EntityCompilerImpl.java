@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
@@ -421,7 +423,7 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
 
     @Override
     public Set<URI> getInstances(GlobalType type, boolean debug) {
-        Set<URI> instances = new HashSet<>();
+        SortedSet<URI> instances = new TreeSet<>();
         for (AssemblyProvider ap : getEntityProviders()) {
             Map<URI,List<Query>> queries;
             if (ap instanceof DebuggableAssemblyProvider) queries = ((DebuggableAssemblyProvider) ap)
@@ -438,8 +440,7 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
                 log.debug("Associating <{}> to <{}>", endpoint, ds2e.getKey());
                 List<Query> lq = queries.get(ds2e.getKey());
                 if (lq == null) lq = new LinkedList<Query>();
-                if (queriesByEndpoint.containsKey(endpoint)) 
-                    queriesByEndpoint.get(endpoint).addAll(lq);
+                if (queriesByEndpoint.containsKey(endpoint)) queriesByEndpoint.get(endpoint).addAll(lq);
                 else queriesByEndpoint.put(endpoint, lq);
                 log.debug(" ... queries : {}", queriesByEndpoint.get(endpoint));
             }

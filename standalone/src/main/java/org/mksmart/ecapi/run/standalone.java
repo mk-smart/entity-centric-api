@@ -53,6 +53,7 @@ import org.mksmart.ecapi.couchdb.storage.FragmentPerQueryStore;
 import org.mksmart.ecapi.impl.EntityCompilerImpl;
 import org.mksmart.ecapi.impl.storage.NonStoringEntityStore;
 import org.mksmart.ecapi.web.util.SPARQLWriter;
+import org.mksmart.ecapi.web.util.SparqlHttpWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -346,8 +347,14 @@ public class standalone {
         ApiKeyDriver driver = selectDriver(pro);
         log.debug("Instantiated permission checker of type {}", driver.getClass());
         sctx.setAttribute(ApiKeyDriver.class.getName(), driver);
-        sctx.setAttribute(SPARQLWriter.class.getName(),
-            new SPARQLWriter(pro.getProperty("org.mksmart.web.util.sparql.writer")));
+        if (pro.containsKey("org.mksmart.web.util.sparql.writer")) {
+            String clazzName = SPARQLWriter.class.getName();
+            String sup = pro.getProperty("org.mksmart.web.util.sparql.writer");
+            if (pro.containsKey("org.mksmart.web.util.sparql.data")) {
+                String sda = pro.getProperty("org.mksmart.web.util.sparql.data");
+                sctx.setAttribute(clazzName, new SparqlHttpWriter(sup, sda));
+            } else sctx.setAttribute(clazzName, new SPARQLWriter(sup));
+        }
 
     }
 
