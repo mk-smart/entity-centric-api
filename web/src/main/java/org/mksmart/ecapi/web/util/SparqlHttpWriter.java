@@ -9,8 +9,12 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SparqlHttpWriter extends SPARQLWriter {
+
+    private Logger log = LoggerFactory.getLogger(getClass());
 
     protected String dataEndpoint;
 
@@ -34,6 +38,8 @@ public class SparqlHttpWriter extends SPARQLWriter {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(dataEndpoint + "?graph=" + graph);
         httpPost.setHeader("Content-type", "text/plain");
+        log.trace("RDF being POSTed follows:");
+        log.trace(NT);
         httpPost.setEntity(new StringEntity(NT, "UTF-8"));
         int code = 500;
         CloseableHttpResponse response = null;

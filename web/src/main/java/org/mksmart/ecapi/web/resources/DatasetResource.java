@@ -57,11 +57,12 @@ public class DatasetResource extends BaseResource {
                            @QueryParam("key") String oldKey,
                            @Context HttpHeaders headers,
                            @Context HttpServletRequest request) {
+        log.info("PUT /dataset/{}", uuid);
         ResponseBuilder rb;
         key = selectKey(key, oldKey);
         if (key != null && writeAuthorised(key, uuid, headers, request)) {
             SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
-            int code = writer.createGraph("urn:dataset/" + uuid + "/graph");
+            int code = writer.createGraph(getGraphId(uuid));
             if (code == 200) {
                 JSONObject o = new JSONObject().put("status", "written to " + uuid);
                 rb = Response.ok((JSONObject) o);
@@ -79,10 +80,11 @@ public class DatasetResource extends BaseResource {
                             @QueryParam("key") String oldKey,
                             @Context HttpHeaders headers,
                             @Context HttpServletRequest request) {
+        log.info("GET /dataset/{}", uuid);
         ResponseBuilder rb;
         key = selectKey(key, oldKey);
         SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
-        boolean exi = writer.exists("urn:dataset/" + uuid + "/graph");
+        boolean exi = writer.exists(getGraphId(uuid));
         JSONObject json = new JSONObject();
         json.put("requested", uuid);
         json.put("found", exi);
@@ -124,6 +126,7 @@ public class DatasetResource extends BaseResource {
                           @QueryParam("key") String oldKey,
                           @FormParam("right") String right,
                           @FormParam("ukey") String ukey) {
+        log.info("POST /dataset/{}/grant", uuid);
         ResponseBuilder rb = null;
         key = selectKey(key, oldKey);
         if (key == null) rb = Response.status(FORBIDDEN);
@@ -186,6 +189,7 @@ public class DatasetResource extends BaseResource {
                           @FormParam("rdf") String rdf,
                           @Context HttpHeaders headers,
                           @Context HttpServletRequest request) {
+        log.info("POST /dataset/{}", uuid);
         ResponseBuilder rb;
         key = selectKey(key, oldKey);
         if (key == null || !writeAuthorised(key, uuid, headers, request)) {
@@ -210,8 +214,7 @@ public class DatasetResource extends BaseResource {
                     JsonMessageFactory
                             .badRequest("Form param 'data' is required, and you do not seem to have used the deprecated 'rdf' parameter."));
         SPARQLWriter writer = (SPARQLWriter) servletContext.getAttribute(SPARQLWriter.class.getName());
-        // FIXME THIS MUST NOT BE HARDCODED !!!!!!!!!!!!!!!!!!!!
-        int code = writer.write(data, "urn:dataset:" + uuid + ":graph");
+        int code = writer.write(data, getGraphId(uuid));
         if (code < 200 || code >= 400) rb = Response.status(code).entity(
             JsonMessageFactory.response(code, "Writer returned erroneous HTTP code " + code));
         else {
@@ -220,6 +223,13 @@ public class DatasetResource extends BaseResource {
         }
         handleCors(rb, "GET", "POST", "PUT");
         return rb.build();
+    }
+
+    protected String getGraphId(String uuid) {
+        if (uuid == null || uuid.isEmpty()) throw new IllegalArgumentException(
+                "UUID must be neither null nor empty");
+        // FIXME THIS MUST NOT BE HARDCODED !!!!!!!!!!!!!!!!!!!!
+        return "urn:dataset:" + uuid + ":graph";
     }
 
     protected void init(UriInfo uriInfo, HttpHeaders headers) {
