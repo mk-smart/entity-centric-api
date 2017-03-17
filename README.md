@@ -19,9 +19,9 @@ This implementation is in Java and entirely Maven-based. There are no external d
 
 ## Requirements
 
-To __build__ the API you will need JDK 1.7 and [Maven 3](http://maven.apache.org). Java 8 is currently under test.
+To __build__ the API you will need JDK 1.8 and [Maven 3](http://maven.apache.org).
 
-To __run__ the API you will need a JRE 1.7 and a running instance of [CouchDB](http://couchdb.apache.org) 1.6.x.
+To __run__ the API you will need a JRE 1.8 and a running instance of [CouchDB](http://couchdb.apache.org) 1.6.x.
 
 ## Instructions
 
