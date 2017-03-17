@@ -19,11 +19,11 @@ import org.slf4j.LoggerFactory;
 
 public class SsimpleAuthKeyDriver implements ApiKeyDriver {
 
+    private Logger log = LoggerFactory.getLogger(getClass());
     protected String host, dbName, user, pw, prefix;
     protected KeyAuth keyauth = null;
-    protected String opendatakey = null;
 
-    private Logger log = LoggerFactory.getLogger(getClass());
+    protected String opendatakey = null;
 
     public SsimpleAuthKeyDriver(Properties config) {
         this.host = config.getProperty(KEYMGMT_MYSQL_HOST);
@@ -48,6 +48,23 @@ public class SsimpleAuthKeyDriver implements ApiKeyDriver {
         throw new UnsupportedOperationException("cannot verify the existance of a key");
     }
 
+    // version without keys - i.e. only public things
+    @Override
+    public Set<String> getDataSources() {
+        log.info("Treating as request for open data.");
+        Set<String> result = new HashSet<>();
+        User u = new User(this.opendatakey);
+        try {
+            String[] res = keyauth.listResourcesWithRight(u, Right.READ);
+            for (String r : res) {
+                result.add(r);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
     @Override
     public Set<String> getDataSources(String... keys) {
         if (keys.length < 1) throw new IllegalArgumentException("Key set cannot be empty");
@@ -67,38 +84,6 @@ public class SsimpleAuthKeyDriver implements ApiKeyDriver {
         return result;
     }
 
-    // version without keys - i.e. only public things
-    @Override
-    public Set<String> getDataSources() {
-        log.info("Treating as open data source");
-        Set<String> result = new HashSet<>();
-        User u = new User(this.opendatakey);
-        try {
-            String[] res = keyauth.listResourcesWithRight(u, Right.READ);
-            for (String r : res) {
-                result.add(r);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    @Override
-    public boolean hasRight(String key, String resourceID, int right) {
-        Right rr = null;
-        if (right == ApiKeyDriver.READ_RIGHT) rr = Right.READ;
-        if (right == ApiKeyDriver.WRITE_RIGHT) rr = Right.WRITE;
-        if (right == ApiKeyDriver.GRANT_RIGHT) rr = Right.GRANT;
-        User user = new User(key);
-        try {
-            return this.keyauth.authorize(user, resourceID, rr);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
     @Override
     public boolean grant(String key, String ukey, String resourceID, int right) {
         // if no key, then it is the open key
@@ -115,6 +100,21 @@ public class SsimpleAuthKeyDriver implements ApiKeyDriver {
             return true;
         } catch (Exception e) {
             // e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean hasRight(String key, String resourceID, int right) {
+        Right rr = null;
+        if (right == ApiKeyDriver.READ_RIGHT) rr = Right.READ;
+        if (right == ApiKeyDriver.WRITE_RIGHT) rr = Right.WRITE;
+        if (right == ApiKeyDriver.GRANT_RIGHT) rr = Right.GRANT;
+        User user = new User(key);
+        try {
+            return this.keyauth.authorize(user, resourceID, rr);
+        } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }

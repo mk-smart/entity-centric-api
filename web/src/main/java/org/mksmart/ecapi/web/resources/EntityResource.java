@@ -35,8 +35,10 @@ import org.mksmart.ecapi.api.id.CanonicalGlobalURI;
 import org.mksmart.ecapi.api.id.GlobalURI;
 import org.mksmart.ecapi.api.id.IdGenerator;
 import org.mksmart.ecapi.api.id.ScopedGlobalURI;
+import org.mksmart.ecapi.core.LaunchConfiguration;
 import org.mksmart.ecapi.impl.GlobalTypeImpl;
 import org.mksmart.ecapi.impl.format.JsonSimplifiedGenericRepresentationSerializer;
+import org.mksmart.ecapi.web.Config;
 import org.mksmart.ecapi.web.util.UriRewriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -331,8 +333,10 @@ public class EntityResource extends BaseResource {
             JSONArray instances = new JSONArray();
             for (GlobalURI inst : ts.getExampleInstances(datasetId))
                 instances.put(base + '/' + inst.toString());
-            dso.put("example_instances", instances);
-            dsSupport.put(datasetId.toString(), dso);
+            if (instances.length() > 0) {
+                dso.put("example_instances", instances);
+                dsSupport.put(datasetId.toString(), dso);
+            }
         }
         return dsSupport;
     }
@@ -394,7 +398,6 @@ public class EntityResource extends BaseResource {
 
     protected String selectNamespace(UriInfo uriInfo, HttpHeaders headers, boolean https) {
         String ns;
-        log.debug("Selecting namespace to rewrite entity URIs with.");
         if (headers.getRequestHeader("X-Forwarded-Server") != null) {
             ns = (https ? "https" : "http") + "://"
                  + headers.getRequestHeader("X-Forwarded-Server").iterator().next();
@@ -404,6 +407,17 @@ public class EntityResource extends BaseResource {
             log.trace(" ... falling back to base URI <{}>", ns);
         }
         if (!ns.endsWith("/")) ns += '/';
+        LaunchConfiguration mainConf = LaunchConfiguration.getInstance();
+        if (mainConf.has(Config.WEB_PATH_PREFIX)) {
+            String ppath = mainConf.get(Config.WEB_PATH_PREFIX).toString().trim();
+            if (!ppath.isEmpty()) {
+                while (ppath.startsWith("/"))
+                    ppath = ppath.substring(1);
+                while (ppath.endsWith("/"))
+                    ppath = ppath.substring(0, ppath.length() - 1);
+                if (!ppath.trim().isEmpty()) ns += ppath + '/';
+            }
+        }
         log.debug("<== DONE. Selected namespace is <{}>", ns);
         return ns;
     }

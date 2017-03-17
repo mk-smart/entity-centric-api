@@ -27,12 +27,17 @@ import org.slf4j.LoggerFactory;
  */
 public class SPARQLWriter {
 
-    private String endpointUrl = null;
+    protected String updateEndpoint = null;
 
     private Logger log = LoggerFactory.getLogger(getClass());
 
-    public SPARQLWriter(String endpointUrl) {
-        this.endpointUrl = endpointUrl;
+    /**
+     * 
+     * @param updateEndpoint
+     *            the URL where SPARQL UPDATE requests should be sent.
+     */
+    public SPARQLWriter(String updateEndpoint) {
+        this.updateEndpoint = updateEndpoint;
     }
 
     public int createGraph(String graph) {
@@ -40,7 +45,7 @@ public class SPARQLWriter {
     }
 
     public int write(String NT, String graph) {
-       // System.err.println("INSERT DATA { GRAPH <" + graph + "> {" + NT + "} }");
+        // System.err.println("INSERT DATA { GRAPH <" + graph + "> {" + NT + "} }");
         return doUpdate("INSERT DATA { GRAPH <" + graph + "> {" + NT + "} }");
     }
 
@@ -59,7 +64,7 @@ public class SPARQLWriter {
     private HttpEntity doQuery(String query, String mimeType) {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         HttpEntity result;
-        HttpPost httpPost = new HttpPost(this.endpointUrl.replaceFirst("[^/]*$", "query"));
+        HttpPost httpPost = new HttpPost(this.updateEndpoint.replaceFirst("[^/]*$", "query"));
         httpPost.setHeader("Accept", mimeType);
         List<NameValuePair> nvps = new ArrayList<NameValuePair>();
         // should sanitise the UUID, to make sure...
@@ -74,14 +79,14 @@ public class SPARQLWriter {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-           // tearDown(httpclient, response);
+            // tearDown(httpclient, response);
         }
         return result;
     }
 
     private int doUpdate(String query) {
         CloseableHttpClient httpclient = HttpClients.createDefault();
-        HttpPost httpPost = new HttpPost(this.endpointUrl);
+        HttpPost httpPost = new HttpPost(this.updateEndpoint);
         List<NameValuePair> nvps = new ArrayList<NameValuePair>();
         // should sanitise the UUID, to make sure...
         nvps.add(new BasicNameValuePair("update", query));
@@ -101,7 +106,7 @@ public class SPARQLWriter {
         return code;
     }
 
-    private void tearDown(CloseableHttpClient client, CloseableHttpResponse response) {
+    protected void tearDown(CloseableHttpClient client, CloseableHttpResponse response) {
         try {
             response.close();
         } catch (IOException e) {

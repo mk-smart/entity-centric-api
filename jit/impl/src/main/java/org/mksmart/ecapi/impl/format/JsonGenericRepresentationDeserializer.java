@@ -2,7 +2,6 @@ package org.mksmart.ecapi.impl.format;
 
 import java.net.URI;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mksmart.ecapi.api.Entity;
@@ -17,6 +16,14 @@ public class JsonGenericRepresentationDeserializer {
         return deserialize(json, false);
     }
 
+    /**
+     * 
+     * @param json
+     * @param isEncapsulated
+     *            If true, the parser will assume the actual entity data are included in a field called
+     *            "global-representation".
+     * @return
+     */
     public static EntityFragment deserialize(JSONObject json, boolean isEncapsulated) {
         if (json == null) throw new IllegalArgumentException("Nothing to parse on a null JSON object");
         EntityFragment result = new EntityImpl();
@@ -38,29 +45,30 @@ public class JsonGenericRepresentationDeserializer {
                     if (!(v instanceof JSONObject)) throw new IllegalStateException(
                             "Format error. Expected a " + JSONObject.class.getCanonicalName() + ", got a "
                                     + v.getClass().getCanonicalName());
-                    if(!((JSONObject) v).has("type")) {
+                    if (!((JSONObject) v).has("type")) {
                         // It's an expanded query!
                         EntityFragment eff = deserialize((JSONObject) v, false);
                         if (eff instanceof Entity) result.addValue(property, (Entity) eff);
-                        
-//                        for ( Object nestedProperty : ((JSONObject) v).keySet() ) {
-//                            if (nestedProperty instanceof String) {
-//                                URI p2 = URI.create((String) nestedProperty);
-//                            }
-//                        }
-//                        throw new NotImplementedException("Deserialisation of expanded queries NIY");
+
+                        // for ( Object nestedProperty : ((JSONObject) v).keySet() ) {
+                        // if (nestedProperty instanceof String) {
+                        // URI p2 = URI.create((String) nestedProperty);
+                        // }
+                        // }
+                        // throw new NotImplementedException("Deserialisation of expanded queries NIY");
                     } else {
-                    String nature = ((JSONObject) v).getString("type");
-                    Object actualValue = ((JSONObject) v).get("value");
-                    if ("ref".equals(nature)) {
-                        if (actualValue instanceof JSONObject) {
-                            EntityFragment eff = deserialize((JSONObject) actualValue, false);
-                            if (eff instanceof Entity) result.addValue(property, (Entity) eff);
-                        } else result
-                                .addValue(property, ResourceFactory.createResource((String) actualValue));
-                    } else if ("terminal".equals(nature)) {
-                        result.addValue(property, ResourceFactory.createPlainLiteral((String) actualValue));
-                    }
+                        String nature = ((JSONObject) v).getString("type");
+                        Object actualValue = ((JSONObject) v).get("value");
+                        if ("ref".equals(nature)) {
+                            if (actualValue instanceof JSONObject) {
+                                EntityFragment eff = deserialize((JSONObject) actualValue, false);
+                                if (eff instanceof Entity) result.addValue(property, (Entity) eff);
+                            } else result.addValue(property,
+                                ResourceFactory.createResource((String) actualValue));
+                        } else if ("terminal".equals(nature)) {
+                            result.addValue(property,
+                                ResourceFactory.createPlainLiteral((String) actualValue));
+                        }
                     }
                 }
             }

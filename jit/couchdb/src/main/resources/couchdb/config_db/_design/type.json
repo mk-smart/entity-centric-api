@@ -3,8 +3,7 @@
    "language": "javascript",
    "views": {
        "guess": {
-           "map": "function(doc){ if (doc.type == 'representation') { for (propid in doc['mks:representation']) { emit(doc.type, { _id: propid }); } } }",
-           "reduce": "function(keys, values, rereduce) { return null }"
+           "map": "function(doc){ if (doc.type == 'representation') { for (propid in doc['mks:representation']) { emit(doc.type, { _id: propid }); } } }"
        },
        "short": {
            "map": "function(doc){switch(doc.type){case'global-type-spec':var eqs=doc['mks:equiv-set'];if(typeof eqs==='string')eqs=[eqs];for(var i in eqs)emit(eqs[i],doc._id);break;}}"

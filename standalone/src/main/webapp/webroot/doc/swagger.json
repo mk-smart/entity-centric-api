@@ -7,7 +7,7 @@
 	},
 	"host" : "data.afel-project.eu",
 	"basePath" : "/api",
-	"schemes" : ["http"],
+	"schemes" : ["https"],
 	"tags" : [{
 			"name" : "dataset",
 			"description" : "Operations on datasets"

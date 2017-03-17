@@ -10,6 +10,7 @@ import org.apache.commons.codec.net.URLCodec;
 import org.apache.http.auth.Credentials;
 import org.apache.wink.client.ClientAuthenticationException;
 import org.apache.wink.client.ClientResponse;
+import org.apache.wink.client.ClientRuntimeException;
 import org.apache.wink.client.ClientWebException;
 import org.apache.wink.client.Resource;
 import org.json.JSONArray;
@@ -107,6 +108,10 @@ public class RemoteDocumentProvider extends RemoteDocumentHandlerBase implements
                 resp.getStatusType());
             log.warn("Failing resource was: <{}>", url);
             response = null;
+        } catch (ClientRuntimeException ex) {
+            log.error("Retrieval failed. Reason: '{}'", ex.getMessage());
+            log.error("Failing resource was: <{}>", url);
+            response = null;
         }
         return response;
     }
@@ -133,19 +138,6 @@ public class RemoteDocumentProvider extends RemoteDocumentHandlerBase implements
         String u = this.serviceUrl.toString() + '/' + this.dbName + '/' + "_design" + '/' + designDocId + '/'
                    + "_view" + '/' + viewId;
         return getResource(u, keys);
-    }
-
-    @Deprecated
-    private boolean healthCheck() {
-        String u = this.serviceUrl.toString();
-        try {
-            getResource(u);
-        } catch (RuntimeException ex) {
-            log.error("Could not ping database root <{}>", u);
-            log.error("Connection attempt returned a {}", ex.getLocalizedMessage());
-            return false;
-        }
-        return true;
     }
 
 }

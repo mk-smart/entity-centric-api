@@ -2,6 +2,7 @@ package org.mksmart.ecapi.impl;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
@@ -34,6 +37,7 @@ import org.mksmart.ecapi.api.id.ScopedGlobalURI;
 import org.mksmart.ecapi.api.provenance.PropertyPath;
 import org.mksmart.ecapi.api.query.Query;
 import org.mksmart.ecapi.api.query.TargetedQuery;
+import org.mksmart.ecapi.api.storage.BulkStore;
 import org.mksmart.ecapi.api.storage.Cache;
 import org.mksmart.ecapi.api.storage.Store;
 import org.mksmart.ecapi.impl.query.DistributedQueries;
@@ -57,9 +61,9 @@ import com.hp.hpl.jena.rdf.model.ResourceFactory;
  */
 public class EntityCompilerImpl implements DebuggableEntityCompiler {
 
-    private Catalogue catalogue;
-
     private Cache cache;
+
+    private Catalogue catalogue;
 
     private Logger log = LoggerFactory.getLogger(getClass());
 
@@ -155,38 +159,39 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
             filtered.get(entry.getKey()).removeAll(hits);
             log.debug(" .. after = {}", entry.getValue().size());
         }
-
-        for (TargetedQuery tq : hits) {
-            Object o = null;
-            for (Iterator<Store<?,?>> it = stores.iterator(); it.hasNext() && o == null;) {
-                Store<?,?> st = it.next();
-                if (st.getSupportedKeyType() == TargetedQuery.class) {
-                    try {
-                        o = ((Store<TargetedQuery,?>) st).retrieve(tq);
-                    } catch (Exception ex) {
-                        log.error("Retrieval failed.", ex);
-                    }
-                    if (o != null) {
-                        log.trace("Cache hit.");
-                        log.trace(" ... is a {}", o.getClass().getCanonicalName());
-                        if (!(o instanceof EntityFragment)) throw new IllegalStateException(
-                                "Unexpected type " + o.getClass().getCanonicalName()
-                                        + " for an entity fragment. Supported types are "
-                                        + EntityFragment.class.getCanonicalName() + " and "
-                                        + Entity.class.getCanonicalName());
-                        EntityFragment ef = (EntityFragment) o;
-                        long before = System.currentTimeMillis();
-                        reconstructProvenance(ef, ef, tq.getTarget().toString(), new PropertyPath(),
-                            new HashSet<EntityFragment>());
-                        log.debug("Provenance computation overhead = {} ms", System.currentTimeMillis()
-                                                                             - before);
-                        if (ef instanceof Entity) Util.merge((Entity) ef, ecached);
-                        else Util.merge(ef, ecached);
-                    } else log.trace("Cache miss.");
-                }
-            }
-
-        }
+        // Get the data from the cache hits
+        getDataFromCacheHitsBulk(hits, ecached);
+        // for (TargetedQuery tq : hits) {
+        // Object o = null;
+        // for (Iterator<Store<?,?>> it = stores.iterator(); it.hasNext() && o == null;) {
+        // Store<?,?> st = it.next();
+        // if (st.getSupportedKeyType() == TargetedQuery.class) {
+        // try {
+        // o = ((Store<TargetedQuery,?>) st).retrieve(tq);
+        // } catch (Exception ex) {
+        // log.error("Retrieval failed.", ex);
+        // }
+        // if (o != null) {
+        // log.trace("Cache hit.");
+        // log.trace(" ... is a {}", o.getClass().getCanonicalName());
+        // if (!(o instanceof EntityFragment)) throw new IllegalStateException(
+        // "Unexpected type " + o.getClass().getCanonicalName()
+        // + " for an entity fragment. Supported types are "
+        // + EntityFragment.class.getCanonicalName() + " and "
+        // + Entity.class.getCanonicalName());
+        // EntityFragment ef = (EntityFragment) o;
+        // long before = System.currentTimeMillis();
+        // reconstructProvenance(ef, ef, tq.getTarget().toString(), new PropertyPath(),
+        // new HashSet<EntityFragment>());
+        // log.debug("Provenance computation overhead = {} ms", System.currentTimeMillis()
+        // - before);
+        // if (ef instanceof Entity) Util.merge((Entity) ef, ecached);
+        // else Util.merge(ef, ecached);
+        // } else log.trace("Cache miss.");
+        // }
+        // }
+        //
+        // }
 
         // Query execution
         SingletonQuerier querier = SingletonQuerier.getInstance();
@@ -421,7 +426,7 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
 
     @Override
     public Set<URI> getInstances(GlobalType type, boolean debug) {
-        Set<URI> instances = new HashSet<>();
+        SortedSet<URI> instances = new TreeSet<>();
         for (AssemblyProvider ap : getEntityProviders()) {
             Map<URI,List<Query>> queries;
             if (ap instanceof DebuggableAssemblyProvider) queries = ((DebuggableAssemblyProvider) ap)
@@ -438,8 +443,7 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
                 log.debug("Associating <{}> to <{}>", endpoint, ds2e.getKey());
                 List<Query> lq = queries.get(ds2e.getKey());
                 if (lq == null) lq = new LinkedList<Query>();
-                if (queriesByEndpoint.containsKey(endpoint)) 
-                    queriesByEndpoint.get(endpoint).addAll(lq);
+                if (queriesByEndpoint.containsKey(endpoint)) queriesByEndpoint.get(endpoint).addAll(lq);
                 else queriesByEndpoint.put(endpoint, lq);
                 log.debug(" ... queries : {}", queriesByEndpoint.get(endpoint));
             }
@@ -475,6 +479,80 @@ public class EntityCompilerImpl implements DebuggableEntityCompiler {
             }
         }
         return ts;
+    }
+
+    private void getDataFromCacheHitsBulk(Collection<TargetedQuery> hits, Entity cachedEntity) {
+        for (Iterator<Store<?,?>> it = stores.iterator(); it.hasNext();) {
+            Store<?,?> st = it.next();
+            Map<?,?> res = null;
+            if (st instanceof BulkStore && st.getSupportedKeyType() == TargetedQuery.class) {
+                try {
+                    res = ((BulkStore<TargetedQuery,?>) st).retrieve(hits);
+                } catch (Exception ex) {
+                    log.error("Retrieval failed.", ex);
+                }
+                if (res != null) for (Entry<?,?> entry : res.entrySet()) {
+                    Object o = entry.getValue();
+                    log.trace("Cache hit.");
+                    log.trace(" ... is a {}", o.getClass().getCanonicalName());
+                    if (!(o instanceof EntityFragment)) throw new IllegalStateException(
+                            "Unexpected type " + o.getClass().getCanonicalName()
+                                    + " for an entity fragment. Supported types are "
+                                    + EntityFragment.class.getCanonicalName() + " and "
+                                    + Entity.class.getCanonicalName());
+                    EntityFragment ef = (EntityFragment) o;
+                    long before = System.currentTimeMillis();
+                    Object tq = entry.getKey();
+                    if (tq != null) {
+                        if (!(tq instanceof TargetedQuery)) throw new IllegalStateException(
+                                "Unexpected type " + tq.getClass().getCanonicalName()
+                                        + " for a targeted query. Supported types include: "
+                                        + TargetedQuery.class.getCanonicalName());
+                        reconstructProvenance(ef, ef, ((TargetedQuery) tq).getTarget().toString(),
+                            new PropertyPath(), new HashSet<EntityFragment>());
+                        log.debug("Provenance computation overhead = {} ms", System.currentTimeMillis()
+                                                                             - before);
+                    }
+                    if (ef instanceof Entity) Util.merge((Entity) ef, cachedEntity);
+                    else Util.merge(ef, cachedEntity);
+                }
+                else log.trace("Cache miss.");
+            }
+        }
+    }
+
+    private void getDataFromCacheHitsPiecemeal(Collection<TargetedQuery> hits, Entity cachedEntity) {
+        for (TargetedQuery tq : hits) {
+            Object o = null;
+            for (Iterator<Store<?,?>> it = stores.iterator(); it.hasNext() && o == null;) {
+                Store<?,?> st = it.next();
+                if (st.getSupportedKeyType() == TargetedQuery.class) {
+                    try {
+                        o = ((Store<TargetedQuery,?>) st).retrieve(tq);
+                    } catch (Exception ex) {
+                        log.error("Retrieval failed.", ex);
+                    }
+                    if (o != null) {
+                        log.trace("Cache hit.");
+                        log.trace(" ... is a {}", o.getClass().getCanonicalName());
+                        if (!(o instanceof EntityFragment)) throw new IllegalStateException(
+                                "Unexpected type " + o.getClass().getCanonicalName()
+                                        + " for an entity fragment. Supported types are "
+                                        + EntityFragment.class.getCanonicalName() + " and "
+                                        + Entity.class.getCanonicalName());
+                        EntityFragment ef = (EntityFragment) o;
+                        long before = System.currentTimeMillis();
+                        reconstructProvenance(ef, ef, tq.getTarget().toString(), new PropertyPath(),
+                            new HashSet<EntityFragment>());
+                        log.debug("Provenance computation overhead = {} ms", System.currentTimeMillis()
+                                                                             - before);
+                        if (ef instanceof Entity) Util.merge((Entity) ef, cachedEntity);
+                        else Util.merge(ef, cachedEntity);
+                    } else log.trace("Cache miss.");
+                }
+            }
+
+        }
     }
 
     private EntityFragment reconstructProvenance(EntityFragment inspectMe,

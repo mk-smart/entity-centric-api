@@ -136,14 +136,19 @@ public class SingletonQuerier extends ProvenanceListenable {
                                 RDFNode val = sol.get("o" + i);
                                 log.trace("o{} is '{}' (will be skipped)", i, val);
                                 if (rs instanceof Entity && val.isResource()) {
-                                    URI uv = URI.create(val.asResource().getURI());
-                                    Entity eval = ((Entity) rs).getEntityWithID(up, uv);
-                                    if (eval == null) {
-                                        eval = new EntityImpl();
-                                        eval.addAlias(uv);
+                                    String urs = val.asResource().getURI();
+                                    if (urs != null) {
+                                        URI uv = URI.create(urs);
+                                        Entity eval = ((Entity) rs).getEntityWithID(up, uv);
+                                        if (eval == null) {
+                                            eval = new EntityImpl();
+                                            eval.addAlias(uv);
+                                        }
+                                        doAdd(rs, p, eval, dataset, path);
+                                        rs = eval;
+                                    } else {
+                                        log.warn("WTF? value <{}> is a resource but has no URI.", val);
                                     }
-                                    doAdd(rs, p, eval, dataset, path);
-                                    rs = eval;
                                 } else {
                                     log.warn("Expected value '{}' to be a RDF resource, got a {} instead.",
                                         val, val.getClass().getCanonicalName());
