@@ -1,12 +1,16 @@
 package org.mksmart.ecapi.couchdb.storage;
 
 import java.net.URI;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.wink.client.ClientRuntimeException;
 import org.apache.wink.client.ClientWebException;
 import org.apache.wink.client.Resource;
 import org.json.JSONArray;
@@ -56,8 +60,46 @@ public class FragmentPerQueryStore extends RemoteDocumentProvider implements Fra
     }
 
     @Override
-    public EntityFragment retrieve(TargetedQuery key) {
+    public Map<TargetedQuery,EntityFragment> retrieve(Collection<TargetedQuery> keys) {
+        long before = System.currentTimeMillis();
+        Map<TargetedQuery,EntityFragment> result = new HashMap<TargetedQuery,EntityFragment>();
+        Map<String,TargetedQuery> tqKeyMap = new HashMap<String,TargetedQuery>();
+        log.debug("Will retrieve cached fragment provided by {} keys:", keys.size());
+        for (TargetedQuery key : keys) {
+            log.debug(" - <{}>", key.getTarget());
+            log.trace("Detailed fragment descriptor follows :\r\n{}", key.toString());
+            tqKeyMap.put(EncodeUtils.encode(key), key);
+        }
+        String u = config.getServiceURL().toString() + '/' + config.getStorageDbName() + '/'
+                   + "_all_docs?include_docs=true";
+        Resource resource = this.client.resource(u);
+        if (tqKeyMap.size() > 0) resource.queryParam("keys", new JSONArray(tqKeyMap.keySet()));
+        try {
+            log.debug("GETting {} bulk documents using DB '{}'", keys.size(), super.dbName);
+            log.debug("GETting document at <{}>", u);
+            JSONObject data = resource.accept(MediaType.APPLICATION_JSON).get(JSONObject.class);
+            JSONArray rows = data.getJSONArray("rows");
+            for (int i = 0; i < rows.length(); i++) {
+                String tq = rows.getJSONObject(i).getString("id");
+                log.debug("Extracting entity data from document <{}>", tq);
+                JSONObject doc = rows.getJSONObject(i).getJSONObject("doc");
+                result.put(tqKeyMap.get(tq), JsonGenericRepresentationDeserializer.deserialize(doc, true));
+            }
+        } catch (ClientWebException ex) {
+            log.error("Remote Database reported: \"{} {}\"", ex.getResponse().getStatusCode(), ex
+                    .getResponse().getStatusType());
+            throw ex;
+        } catch (ClientRuntimeException ex) {
+            log.error("Remote Database reported: \"{}\"", ex.getMessage());
+            throw ex;
+        }
+        log.info(" ... retrieval overhead: {} ms (#datasets={})", System.currentTimeMillis() - before,
+            keys.size());
+        return result;
+    }
 
+    @Override
+    public EntityFragment retrieve(TargetedQuery key) {
         long before = System.currentTimeMillis();
         EntityFragment result = null;
         log.debug("Will retrieve cached fragment provided by <{}>", key.getTarget());
@@ -78,6 +120,9 @@ public class FragmentPerQueryStore extends RemoteDocumentProvider implements Fra
                         .getResponse().getStatusType());
                 throw ex;
             }
+        } catch (ClientRuntimeException ex) {
+            log.error("Remote Database reported: \"{}\"", ex.getMessage());
+            throw ex;
         }
         log.info(" ... retrieval overhead: {} ms (dataset: <{}>)", System.currentTimeMillis() - before,
             key.getTarget());

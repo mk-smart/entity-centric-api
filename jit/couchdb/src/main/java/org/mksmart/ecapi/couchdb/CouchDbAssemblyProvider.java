@@ -17,6 +17,7 @@ import static org.mksmart.ecapi.couchdb.Config.DB;
 import static org.mksmart.ecapi.couchdb.Config.SERVICE_URL;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -160,9 +161,10 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
             filtered.addAll(datasetNames);
             filtered.retainAll(checkUs);
         }
-        log.debug("{} datasets filtered in out of {} requested.",
+        log.info("{} datasets filtered in out of {} requested.",
             datasetNames == null ? "[undefined, all open data]" : filtered.size(),
             datasetNames == null ? "[none specifically]" : datasetNames.size());
+        log.info("Using datasets : {}", Arrays.toString(filtered.toArray()));
         return filtered;
     }
 
@@ -396,7 +398,7 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
             Set<String> allowed = filterDatasets(jds, datasetNames);
             for (int i = 0; i < rows.length(); i++) {
                 JSONObject row = rows.getJSONObject(i);
-                log.info("{}: dataset <{}>", i, row.getString("id"));
+                log.debug("{}: dataset <{}>", i, row.getString("id"));
                 JSONObject value = row.getJSONObject("value");
                 // Debug restrictions come first.
                 if (value.has("debug") && value.getBoolean("debug") && !debug) {
@@ -405,7 +407,7 @@ public class CouchDbAssemblyProvider implements DebuggableAssemblyProvider<Strin
                     continue;
                 }
                 if (allowed != null && !allowed.contains(row.getString("id"))) {
-                    log.info(" ... NOT allowed with supplied credentials! Skipping...");
+                    log.debug(" ... NOT allowed with supplied credentials! Skipping...");
                     continue;
                 }
 

@@ -17,7 +17,6 @@
        },
        "typefunctions": {
            "map": "function(doc){if(doc.type=='global-type-spec') emit(doc._id,{super:doc['mks:super'], localise:doc.localise, query_tpl:doc.query_tpl, query_text:doc.query_text})}"
-           ,"description": "just for tests, delete me!"
        }
    }
 }
